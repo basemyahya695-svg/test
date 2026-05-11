@@ -48,5 +48,11 @@ const api = {
   payBill: (id) => apiRequest(`/bills/${id}/pay`, { method: "PATCH" }),
   schedule: () => apiRequest("/schedule"),
   reminders: () => apiRequest("/reminders"),
-  sendReminders: () => apiRequest("/reminders/send", { method: "POST" }),
+  sendReminders: ({ paidOccurrences = {}, unpaidOccurrenceKeys = [] } = {}) => apiRequest("/reminders/send", {
+    method: "POST",
+    body: JSON.stringify({
+      paid_occurrences: paidOccurrences,
+      unpaid_occurrences: unpaidOccurrenceKeys,
+    }),
+  }),
 };

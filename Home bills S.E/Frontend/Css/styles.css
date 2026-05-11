@@ -189,6 +189,39 @@ button {
   font-size: 14px;
 }
 
+[data-action="add-bill"],
+[data-action="edit-profile"] {
+  transition: border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+[data-action="add-bill"] {
+  color: #365314;
+  background: #ecfccb;
+  border-color: #bef264;
+}
+
+[data-action="add-bill"]:hover {
+  color: #1f3d06;
+  background: #d9f99d;
+  border-color: #84cc16;
+  box-shadow: 0 0 0 3px rgba(132, 204, 22, 0.22), 0 10px 24px rgba(77, 124, 15, 0.18);
+  transform: translateY(-1px);
+}
+
+[data-action="edit-profile"] {
+  color: #334155;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+[data-action="edit-profile"]:hover {
+  color: #111827;
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.24), 0 10px 24px rgba(51, 65, 85, 0.18);
+  transform: translateY(-1px);
+}
+
 .danger-button {
   padding: 0 12px;
   color: var(--danger);
@@ -604,6 +637,25 @@ body.dark .bill-card:hover {
   gap: 8px;
 }
 
+.calendar-actions [data-action="send-reminders"] {
+  border-color: #ded6ff;
+  color: #4c1d95;
+  transition: border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, background-color 160ms ease;
+}
+
+.calendar-actions [data-action="send-reminders"] svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.55;
+}
+
+.calendar-actions [data-action="send-reminders"]:hover {
+  color: #6d28d9;
+  background: #f5f0ff;
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2), 0 10px 24px rgba(109, 40, 217, 0.18);
+}
+
 .calendar-weekdays,
 .calendar-grid {
   display: grid;
@@ -660,7 +712,7 @@ body.dark .bill-card:hover {
 }
 
 .schedule-item {
-  grid-template-columns: 64px auto 1fr auto;
+  grid-template-columns: 64px auto 1fr auto auto;
   align-items: center;
   box-shadow: var(--shadow);
 }
@@ -968,6 +1020,72 @@ body.dark .sidebar {
 
 body.dark .stat-card .stat-icon[style*="#ffffff"] {
   background: var(--panel-soft) !important;
+}
+
+body.dark .calendar-actions [data-action="send-reminders"] {
+  color: #ddd6fe;
+  background: #271b3f;
+  border-color: #6d4cc8;
+  box-shadow: inset 0 0 0 1px rgba(221, 214, 254, 0.08);
+}
+
+body.dark .calendar-actions [data-action="send-reminders"]:hover {
+  color: #ffffff;
+  background: #3b2470;
+  border-color: #c4b5fd;
+  box-shadow: 0 0 0 3px rgba(196, 181, 253, 0.22), 0 12px 30px rgba(167, 139, 250, 0.28);
+}
+
+body.dark [data-action="add-bill"] {
+  color: #d9f99d;
+  background: #263716;
+  border-color: #65a30d;
+}
+
+body.dark [data-action="add-bill"]:hover {
+  color: #ffffff;
+  background: #365314;
+  border-color: #bef264;
+  box-shadow: 0 0 0 3px rgba(190, 242, 100, 0.24), 0 12px 30px rgba(132, 204, 22, 0.24);
+}
+
+body.dark [data-action="edit-profile"] {
+  color: #e2e8f0;
+  background: #2b3442;
+  border-color: #64748b;
+}
+
+body.dark [data-action="edit-profile"]:hover {
+  color: #ffffff;
+  background: #475569;
+  border-color: #cbd5e1;
+  box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.2), 0 12px 30px rgba(148, 163, 184, 0.22);
+}
+
+body.dark .modal {
+  color: var(--text);
+  background: #202833;
+  border: 1px solid #3b4658;
+}
+
+body.dark .modal-header h2,
+body.dark .reminder-item h3 {
+  color: #f8fbff;
+}
+
+body.dark .reminder-item {
+  background: #18202a;
+  border-color: color-mix(in srgb, var(--category-color) 62%, #ffffff);
+  box-shadow: inset 4px 0 0 var(--category-color);
+}
+
+body.dark .reminder-item p {
+  color: #d9e2ef;
+}
+
+body.dark .reminder-item .category-icon {
+  background: color-mix(in srgb, var(--category-color) 28%, #101722) !important;
+  color: #ffffff !important;
 }
 
 [dir="rtl"] .bill-amount {

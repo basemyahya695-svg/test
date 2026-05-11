@@ -72,7 +72,7 @@ const iconPaths = {
 };
 
 function currentLanguage() {
-  return localStorage.getItem("myhome:language") || "en";
+  return StorageService.getValue(STORAGE_KEYS.language, "en");
 }
 
 function t(key) {
@@ -85,7 +85,7 @@ function icon(name, className = "") {
 }
 
 function preferredCurrency() {
-  return localStorage.getItem("myhome:currency") || "USD";
+  return StorageService.getValue(STORAGE_KEYS.currency, "USD");
 }
 
 function convertAmount(amount, fromCurrency = "USD", toCurrency = preferredCurrency()) {
@@ -140,8 +140,7 @@ function isOverdue(bill) {
 }
 
 function daysOverdue(bill) {
-  const msPerDay = 24 * 60 * 60 * 1000;
-  return Math.max(0, Math.ceil((new Date(new Date().toDateString()) - parseDate(bill.due_date)) / msPerDay));
+  return Math.max(0, Math.ceil((new Date(new Date().toDateString()) - parseDate(bill.due_date)) / MS_PER_DAY));
 }
 
 function setToast(message) {
@@ -153,15 +152,13 @@ function setToast(message) {
   }
   toast.textContent = message;
   toast.classList.add("show");
-  window.setTimeout(() => toast.classList.remove("show"), 2800);
+  window.setTimeout(() => toast.classList.remove("show"), TOAST_DURATION_MS);
 }
 
 function openDueBillsPopup(reminders) {
   if (!reminders.length) return;
 
-  const modal = document.createElement("div");
-  modal.className = "modal-backdrop open";
-  modal.innerHTML = `
+  ModalService.open(`
     <section class="modal reminder-modal" role="dialog" aria-modal="true" aria-labelledby="due-reminders-title">
       <div class="modal-header">
         <h2 id="due-reminders-title">Bills due in the next 3 days</h2>
@@ -185,11 +182,7 @@ function openDueBillsPopup(reminders) {
         <button class="secondary-button" type="button" data-action="close-modal">Got it</button>
       </div>
     </section>
-  `;
-  document.body.appendChild(modal);
-  modal.querySelectorAll("[data-action='close-modal']").forEach((button) => {
-    button.addEventListener("click", () => modal.remove());
-  });
+  `);
 }
 
 function pagePath(file) {
@@ -197,7 +190,7 @@ function pagePath(file) {
 }
 
 function renderShell(activePage, content) {
-  document.body.classList.toggle("dark", localStorage.getItem("myhome:dark") === "true");
+  document.body.classList.toggle("dark", StorageService.getBoolean(STORAGE_KEYS.darkMode));
   document.documentElement.lang = currentLanguage();
   document.documentElement.dir = currentLanguage() === "ar" ? "rtl" : "ltr";
   const nav = pages.map((page) => `
@@ -229,7 +222,7 @@ function renderShell(activePage, content) {
       await api.logout();
     } finally {
       clearStoredUser();
-      window.location.href = "Login.html?v=20260511j";
+      window.location.href = `Login.html?v=${APP_VERSION}`;
     }
   });
 }
@@ -273,9 +266,7 @@ function billCard(bill) {
 
 function createBillModal(bill = null) {
   const isEdit = Boolean(bill);
-  const modal = document.createElement("div");
-  modal.className = "modal-backdrop open";
-  modal.innerHTML = `
+  return ModalService.open(`
     <form class="modal" data-bill-form>
       <div class="modal-header">
         <h2>${isEdit ? "Edit Bill" : "Add Bill"}</h2>
@@ -284,19 +275,19 @@ function createBillModal(bill = null) {
       <label class="field">Bill Name<input name="name" required value="${bill?.name || ""}" placeholder="Electricity Bill"></label>
       <label class="field">${l("billType") || "Bill Type"}
         <select name="category">
-          ${Object.keys(billCategories).map((item) => `<option value="${item}" ${bill?.category === item ? "selected" : ""}>${l(item)}</option>`).join("")}
+          ${Object.keys(billCategories).map((categoryKey) => `<option value="${categoryKey}" ${bill?.category === categoryKey ? "selected" : ""}>${l(categoryKey)}</option>`).join("")}
         </select>
       </label>
       <label class="field">Amount<input name="amount" type="text" inputmode="decimal" required value="${bill?.amount || ""}" placeholder="125.50"></label>
       <label class="field">Currency
         <select name="currency">
-          ${Object.keys(currencies).map((item) => `<option value="${item}" ${bill?.currency === item ? "selected" : ""}>${currencies[item].label}</option>`).join("")}
+          ${Object.keys(currencies).map((currencyCode) => `<option value="${currencyCode}" ${bill?.currency === currencyCode ? "selected" : ""}>${currencies[currencyCode].label}</option>`).join("")}
         </select>
       </label>
       <label class="field">Due Date<input name="due_date" type="date" required value="${bill?.due_date || ""}"></label>
       <label class="field">Frequency
         <select name="frequency">
-          ${["weekly", "monthly", "yearly", "once"].map((item) => `<option value="${item}" ${bill?.frequency === item ? "selected" : ""}>${item}</option>`).join("")}
+          ${Object.values(BILL_FREQUENCIES).map((frequency) => `<option value="${frequency}" ${bill?.frequency === frequency ? "selected" : ""}>${frequency}</option>`).join("")}
         </select>
       </label>
       <div class="modal-actions">
@@ -304,10 +295,5 @@ function createBillModal(bill = null) {
         <button class="secondary-button" type="submit">${isEdit ? "Save Bill" : "Add Bill"}</button>
       </div>
     </form>
-  `;
-  document.body.appendChild(modal);
-  modal.querySelectorAll("[data-action='close-modal']").forEach((button) => {
-    button.addEventListener("click", () => modal.remove());
-  });
-  return modal;
+  `);
 }

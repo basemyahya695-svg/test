@@ -166,158 +166,27 @@ async function bootAuthedPage(renderer) {
     }
   } catch (error) {
     clearStoredUser();
-    window.location.href = "Login.html?v=20260511j";
+    window.location.href = `Login.html?v=${APP_VERSION}`;
   }
 }
 
 async function showAuthDueBillReminder(user) {
-  const storageKey = "myhome:show-due-reminders-after-auth";
   const expectedUser = String(user.id || user.email || "current");
-  if (sessionStorage.getItem(storageKey) !== expectedUser) return;
+  if (sessionStorage.getItem(STORAGE_KEYS.showDueRemindersAfterAuth) !== expectedUser) return;
 
   try {
     const reminders = await api.reminders();
-    sessionStorage.removeItem(storageKey);
-    openDueBillsPopup(reminders);
+    sessionStorage.removeItem(STORAGE_KEYS.showDueRemindersAfterAuth);
+    openDueBillsPopup(reminders.filter((bill) => !BillService.isPaidOccurrence(bill)));
   } catch (error) {
     console.warn("Could not load due bill reminders", error);
   }
 }
 
-function getSummary(bills, monthlyBills = bills) {
-  const total = monthlyBills
-    .filter((bill) => bill.status === "unpaid")
-    .reduce((sum, bill) => sum + convertAmount(bill.amount, bill.currency, "USD"), 0);
-  const paid = monthlyBills.filter((bill) => bill.status === "paid").length;
-  const unpaid = monthlyBills.filter((bill) => bill.status === "unpaid").length;
-  const overdue = monthlyBills.filter(isOverdue).length;
-  const unpaidAmount = monthlyBills
-    .filter((bill) => bill.status === "unpaid")
-    .reduce((sum, bill) => sum + convertAmount(bill.amount, bill.currency, "USD"), 0);
-  return { total, paid, unpaid, overdue, unpaidAmount };
-}
-
-function formatDateValue(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
-function isRecurringBill(bill) {
-  return bill.frequency && bill.frequency !== "once";
-}
-
-function paidOccurrenceKey(bill) {
-  return `${bill.id}:${bill.due_date}`;
-}
-
-function getPaidOccurrences() {
-  return JSON.parse(localStorage.getItem("myhome:paid-occurrences") || "{}");
-}
-
-function setPaidOccurrence(bill) {
-  const paid = getPaidOccurrences();
-  paid[paidOccurrenceKey(bill)] = true;
-  localStorage.setItem("myhome:paid-occurrences", JSON.stringify(paid));
-}
-
-function clearPaidOccurrencesForBill(billId) {
-  const paid = getPaidOccurrences();
-  Object.keys(paid).forEach((key) => {
-    if (key.startsWith(`${billId}:`)) {
-      delete paid[key];
-    }
-  });
-  localStorage.setItem("myhome:paid-occurrences", JSON.stringify(paid));
-}
-
-function withOccurrenceStatus(bill) {
-  if (!isRecurringBill(bill) || bill.status === "paid") return bill;
-  const paid = getPaidOccurrences();
-  return {
-    ...bill,
-    status: paid[paidOccurrenceKey(bill)] ? "paid" : "unpaid",
-  };
-}
-
-function expandBillsForDateRange(bills, fromDate, toDate) {
-  const result = [];
-  
-  bills.forEach(bill => {
-    const dueDate = parseDate(bill.due_date);
-    
-    if (!bill.frequency || bill.frequency === "once") {
-      if (dueDate >= fromDate && dueDate <= toDate) {
-        result.push(bill);
-      }
-    } else if (bill.frequency === "weekly") {
-      let current = new Date(dueDate);
-      if (current < fromDate) {
-        const diff = fromDate - current;
-        const weeks = Math.ceil(diff / (7 * 24 * 60 * 60 * 1000));
-        current.setDate(current.getDate() + weeks * 7);
-      }
-      while (current <= toDate) {
-        if (current >= dueDate) {
-          result.push({ ...bill, due_date: formatDateValue(current) });
-        }
-        current.setDate(current.getDate() + 7);
-      }
-    } else if (bill.frequency === "monthly") {
-      let current = new Date(dueDate);
-      if (current < fromDate) {
-        let y = fromDate.getFullYear();
-        let m = fromDate.getMonth();
-        let d = Math.min(dueDate.getDate(), new Date(y, m + 1, 0).getDate());
-        current = new Date(y, m, d);
-        if (current < fromDate) {
-          m++;
-          if (m > 11) { m = 0; y++; }
-          d = Math.min(dueDate.getDate(), new Date(y, m + 1, 0).getDate());
-          current = new Date(y, m, d);
-        }
-      }
-      while (current <= toDate) {
-        if (current >= dueDate) {
-          result.push({ ...bill, due_date: formatDateValue(current) });
-        }
-        let y = current.getFullYear();
-        let m = current.getMonth() + 1;
-        if (m > 11) { m = 0; y++; }
-        let d = Math.min(dueDate.getDate(), new Date(y, m + 1, 0).getDate());
-        current = new Date(y, m, d);
-      }
-    } else if (bill.frequency === "yearly") {
-      let current = new Date(dueDate);
-      if (current < fromDate) {
-        current.setFullYear(fromDate.getFullYear());
-        if (current < fromDate) {
-          current.setFullYear(current.getFullYear() + 1);
-        }
-      }
-      while (current <= toDate) {
-        if (current >= dueDate) {
-          result.push({ ...bill, due_date: formatDateValue(current) });
-        }
-        current.setFullYear(current.getFullYear() + 1);
-      }
-    }
-  });
-  
-  return result;
-}
-
-function billsForMonth(bills, baseDate = new Date()) {
-  const monthStart = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
-  const monthEnd = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
-
-  return expandBillsForDateRange(bills, monthStart, monthEnd)
-    .map(withOccurrenceStatus)
-    .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date))
-}
-
 function renderHomePage(bills) {
   const today = new Date(new Date().toDateString());
-  const currentMonthBills = billsForMonth(bills, today);
-  const summary = getSummary(bills, currentMonthBills);
+  const currentMonthBills = BillService.forMonth(bills, today);
+  const summary = BillService.getSummary(currentMonthBills);
   const upcoming = currentMonthBills
     .filter((bill) => bill.status === "unpaid")
     .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
@@ -352,6 +221,7 @@ function statCard(iconName, bg, color, value, label) {
 }
 
 function renderBillsPage(bills) {
+  const displayBills = BillService.forMonth(bills);
   renderShell("bills", `
     ${renderTopbar(t("bills"), l("manageBills"), `<button class="secondary-button compact-button" type="button" data-action="add-bill">${icon("plus")} ${l("addBill")}</button>`)}
     <section class="search-row">
@@ -371,7 +241,7 @@ function renderBillsPage(bills) {
   const draw = () => {
     const query = search.value.trim().toLowerCase();
     const category = filter.value;
-    const visible = bills.filter((bill) => {
+    const visible = displayBills.filter((bill) => {
       const billCategory = categoryForBill(bill).key;
       return bill.name.toLowerCase().includes(query) && (category === "all" || billCategory === category);
     });
@@ -389,13 +259,13 @@ function bindBillActions(bills, renderer = renderBillsPage) {
   document.querySelectorAll("[data-action='pay-bill']").forEach((button) => {
     button.addEventListener("click", async () => {
       const bill = {
-        ...bills.find((item) => String(item.id) === button.dataset.id),
+        ...bills.find((candidateBill) => String(candidateBill.id) === button.dataset.id),
         due_date: button.dataset.dueDate,
         frequency: button.dataset.frequency,
       };
 
-      if (renderer === renderHomePage && isRecurringBill(bill)) {
-        setPaidOccurrence(bill);
+      if (BillService.isRecurring(bill)) {
+        BillService.setPaidOccurrence(bill);
       } else {
         await api.payBill(button.dataset.id);
       }
@@ -438,7 +308,7 @@ function openBillEditor(bill, renderer = renderBillsPage) {
     };
     if (bill) {
       await api.updateBill(bill.id, payload);
-      clearPaidOccurrencesForBill(bill.id);
+      BillService.clearPaidOccurrencesForBill(bill.id);
     } else {
       await api.addBill(payload);
     }
@@ -449,10 +319,11 @@ function openBillEditor(bill, renderer = renderBillsPage) {
 }
 
 function renderSchedulePage(bills) {
-  const summary = getSummary(bills);
+  const summary = BillService.getSummary(BillService.forMonth(bills));
   const today = new Date(new Date().toDateString());
   const oneYearFromNow = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-  const upcoming = expandBillsForDateRange(bills, today, oneYearFromNow)
+  const upcoming = BillService.expandForDateRange(bills, today, oneYearFromNow)
+    .map((bill) => BillService.withOccurrenceStatus(bill))
     .filter((bill) => bill.status === "unpaid")
     .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
   const baseDate = scheduleCalendarDate;
@@ -479,9 +350,13 @@ function renderSchedulePage(bills) {
     renderSchedulePage(bills);
   });
   document.querySelector("[data-action='send-reminders']")?.addEventListener("click", async () => {
-    const result = await api.sendReminders();
+    const result = await api.sendReminders({
+      paidOccurrences: StorageService.getPaidOccurrences(),
+      unpaidOccurrenceKeys: BillService.unpaidOccurrenceKeys(bills),
+    });
     setToast(result.sent ? `Sent ${result.count} unpaid bill(s) by email` : result.message);
   });
+  bindBillActions(bills, renderSchedulePage);
 }
 
 function scheduleCalendar(bills, baseDate) {
@@ -491,7 +366,8 @@ function scheduleCalendar(bills, baseDate) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const leading = firstDay.getDay();
   const lastDay = new Date(year, month, daysInMonth);
-  const monthBills = expandBillsForDateRange(bills, firstDay, lastDay);
+  const monthBills = BillService.expandForDateRange(bills, firstDay, lastDay)
+    .map((bill) => BillService.withOccurrenceStatus(bill));
 
   const cells = [];
   for (let index = 0; index < leading; index += 1) {
@@ -536,7 +412,7 @@ function scheduleItem(bill) {
   const overdue = isOverdue(bill);
   const statusText = scheduleStatusText(bill);
   return `
-    <article class="schedule-item ${overdue && bill.name === "Natural Gas" ? "overdue" : ""}">
+    <article class="schedule-item ${overdue ? "overdue" : ""}">
       <div class="date-tile">
         <small>${date.toLocaleDateString("en-US", { weekday: "short" })}</small>
         <strong>${date.getDate()}</strong>
@@ -553,6 +429,11 @@ function scheduleItem(bill) {
         ${formatCurrency(bill.amount, bill.currency)}
         <span class="badge ${bill.status}">${bill.status}</span>
       </div>
+      <div class="bill-actions">
+        ${bill.status === "unpaid" ? `<button class="icon-button bill-action-button pay-action" type="button" title="Mark paid" aria-label="Mark paid" data-action="pay-bill" data-id="${bill.id}" data-due-date="${bill.due_date}" data-frequency="${bill.frequency || "once"}">${icon("check")}</button>` : ""}
+        <button class="icon-button bill-action-button edit-action" type="button" title="Edit bill" aria-label="Edit bill" data-action="edit-bill" data-id="${bill.id}">${icon("edit")}</button>
+        <button class="icon-button bill-action-button delete-action" type="button" title="Delete bill" aria-label="Delete bill" data-action="delete-bill" data-id="${bill.id}">${icon("trash")}</button>
+      </div>
     </article>
   `;
 }
@@ -562,13 +443,13 @@ function scheduleStatusText(bill) {
   if (isOverdue(bill)) return `Overdue by ${daysOverdue(bill)} days`;
   const dueDate = parseDate(bill.due_date);
   const today = new Date(new Date().toDateString());
-  const daysUntilDue = Math.ceil((dueDate - today) / (24 * 60 * 60 * 1000));
+  const daysUntilDue = Math.ceil((dueDate - today) / MS_PER_DAY);
   return daysUntilDue === 0 ? "Due today" : `Due in ${daysUntilDue} days`;
 }
 
 function renderProfilePage() {
   const user = getStoredUser() || {};
-  const profile = JSON.parse(localStorage.getItem("myhome:profile") || "{}");
+  const profile = StorageService.getProfile();
   const name = profile.name || user.username || "John Doe";
   const email = profile.email || user.email || "john.doe@example.com";
   const phone = profile.phone || "(555) 123-4567";
@@ -603,9 +484,7 @@ function profileField(iconName, label, value) {
 }
 
 function openProfileEditor(profile) {
-  const modal = document.createElement("div");
-  modal.className = "modal-backdrop open";
-  modal.innerHTML = `
+  const modal = ModalService.open(`
     <form class="modal" data-profile-form>
       <div class="modal-header"><h2>Edit Profile</h2><button class="icon-button" type="button" data-action="close-modal">×</button></div>
       <label class="field">Full Name<input name="name" value="${profile.name}" required></label>
@@ -614,18 +493,16 @@ function openProfileEditor(profile) {
       <label class="field">Address<input name="address" value="${profile.address}"></label>
       <div class="modal-actions"><button class="ghost-button" type="button" data-action="close-modal">Cancel</button><button class="secondary-button" type="submit">Save Profile</button></div>
     </form>
-  `;
-  document.body.appendChild(modal);
-  modal.querySelectorAll("[data-action='close-modal']").forEach((button) => button.addEventListener("click", () => modal.remove()));
+  `);
   modal.querySelector("[data-profile-form]").addEventListener("submit", (event) => {
     event.preventDefault();
     const form = event.currentTarget;
-    localStorage.setItem("myhome:profile", JSON.stringify({
+    StorageService.setProfile({
       name: form.name.value,
       email: form.email.value,
       phone: form.phone.value,
       address: form.address.value,
-    }));
+    });
     modal.remove();
     renderProfilePage();
     setToast("Profile saved");
@@ -633,8 +510,8 @@ function openProfileEditor(profile) {
 }
 
 function renderSettingsPage() {
-  const settings = JSON.parse(localStorage.getItem("myhome:settings") || "{}");
-  const dark = localStorage.getItem("myhome:dark") === "true";
+  const settings = StorageService.getSettings();
+  const dark = StorageService.getBoolean(STORAGE_KEYS.darkMode);
   renderShell("settings", `
     <section class="settings-page">
       ${renderTopbar(`${icon("settings")} ${t("settings")}`, l("settingsSubtitle"))}
@@ -645,7 +522,7 @@ function renderSettingsPage() {
         ${settingToggle(l("billReminders"), l("billRemindersHelp"), "reminders", settings.reminders ?? true)}
         <label class="setting-row">
           <span><strong>${l("reminderDays")}</strong><span class="setting-subtitle">${l("reminderDaysHelp")}</span></span>
-          <input class="number-input" data-setting="days" type="number" min="1" max="30" value="${settings.days || 3}">
+          <input class="number-input" data-setting="days" type="number" min="${REMINDER_DAYS_MIN}" max="${REMINDER_DAYS_MAX}" value="${settings.days || REMINDER_DAYS_DEFAULT}">
         </label>
       </section>
       <section class="content-card settings-stack" style="margin-top:24px">
@@ -661,7 +538,7 @@ function renderSettingsPage() {
         <label class="setting-row">
           <span><strong>${l("currency")}</strong><span class="setting-subtitle">${l("currencyHelp")}</span></span>
           <select class="select-input" data-setting="currency">
-            ${Object.keys(currencies).map((code) => `<option value="${code}" ${preferredCurrency() === code ? "selected" : ""}>${code}</option>`).join("")}
+            ${Object.keys(currencies).map((currencyCode) => `<option value="${currencyCode}" ${preferredCurrency() === currencyCode ? "selected" : ""}>${currencyCode}</option>`).join("")}
           </select>
         </label>
       </section>
@@ -670,20 +547,20 @@ function renderSettingsPage() {
 
   document.querySelectorAll("[data-setting]").forEach((input) => {
     input.addEventListener("change", () => {
-      const next = JSON.parse(localStorage.getItem("myhome:settings") || "{}");
+      const next = StorageService.getSettings();
       const value = input.type === "checkbox" ? input.checked : input.value;
       next[input.dataset.setting] = value;
-      localStorage.setItem("myhome:settings", JSON.stringify(next));
+      StorageService.setSettings(next);
       if (input.dataset.setting === "dark") {
-        localStorage.setItem("myhome:dark", String(value));
+        StorageService.setBoolean(STORAGE_KEYS.darkMode, value);
         document.body.classList.toggle("dark", Boolean(value));
       }
       if (input.dataset.setting === "language") {
-        localStorage.setItem("myhome:language", value);
+        StorageService.setValue(STORAGE_KEYS.language, value);
         renderSettingsPage();
       }
       if (input.dataset.setting === "currency") {
-        localStorage.setItem("myhome:currency", value);
+        StorageService.setValue(STORAGE_KEYS.currency, value);
       }
       setToast("Setting updated");
     });

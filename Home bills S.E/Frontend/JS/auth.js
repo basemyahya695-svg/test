@@ -5,19 +5,19 @@ const authView = {
 const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 function getStoredUser() {
-  return JSON.parse(localStorage.getItem("myhome:user") || "null");
+  return StorageService.getUser();
 }
 
 function storeUser(user) {
-  localStorage.setItem("myhome:user", JSON.stringify(user));
+  StorageService.setUser(user);
 }
 
 function clearStoredUser() {
-  localStorage.removeItem("myhome:user");
+  StorageService.clearUser();
 }
 
 function markDueReminderForNextHomeLoad(user) {
-  sessionStorage.setItem("myhome:show-due-reminders-after-auth", String(user.id || user.email || "current"));
+  sessionStorage.setItem(STORAGE_KEYS.showDueRemindersAfterAuth, String(user.id || user.email || "current"));
 }
 
 function setAuthMode(mode) {
@@ -49,7 +49,7 @@ async function handleAuthSubmit(form) {
 
     storeUser(response.user);
     markDueReminderForNextHomeLoad(response.user);
-    window.location.href = "Home.html?v=20260511j";
+    window.location.href = `Home.html?v=${APP_VERSION}`;
   } catch (error) {
     message.textContent = error.message;
   } finally {
