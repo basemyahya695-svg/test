@@ -350,11 +350,24 @@ function renderSchedulePage(bills) {
     renderSchedulePage(bills);
   });
   document.querySelector("[data-action='send-reminders']")?.addEventListener("click", async () => {
-    const result = await api.sendReminders({
-      paidOccurrences: StorageService.getPaidOccurrences(),
-      unpaidOccurrenceKeys: BillService.unpaidOccurrenceKeys(bills),
-    });
-    setToast(result.sent ? `Sent ${result.count} unpaid bill(s) by email` : result.message);
+    try {
+      const freshBills = await api.bills();
+      const today = new Date(new Date().toDateString());
+      const fromDate = new Date(today.getFullYear(), today.getMonth() - 2, 1);
+      const toDate = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+      const unpaidOccurrenceKeys = BillService.expandForDateRange(freshBills, fromDate, toDate)
+        .map((bill) => BillService.withOccurrenceStatus(bill))
+        .filter((bill) => bill.status === "unpaid")
+        .map((bill) => BillService.paidOccurrenceKey(bill));
+
+      const result = await api.sendReminders({
+        paidOccurrences: StorageService.getPaidOccurrences(),
+        unpaidOccurrenceKeys,
+      });
+      setToast(result.sent ? `Sent ${result.count} unpaid bill(s) by email` : result.message);
+    } catch (error) {
+      setToast("Failed to send reminders. Please try again.");
+    }
   });
   bindBillActions(bills, renderSchedulePage);
 }

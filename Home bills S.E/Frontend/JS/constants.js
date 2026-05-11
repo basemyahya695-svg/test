@@ -1,4 +1,4 @@
-const APP_VERSION = "20260512g";
+const APP_VERSION = "20260512j";
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const TOAST_DURATION_MS = 2800;
 const REMINDER_DAYS_MIN = 1;

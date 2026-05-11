@@ -204,7 +204,7 @@ function renderShell(activePage, content) {
     <div class="app-shell">
       <aside class="sidebar">
         <div class="sidebar-brand">
-          <strong>${icon("home")} MyHome</strong>
+          <a class="brand-home-link" href="${pagePath("Home.html")}" aria-label="Go to Home">${icon("home")} MyHome</a>
           <small>${t("household")}</small>
         </div>
         <nav class="nav">${nav}</nav>

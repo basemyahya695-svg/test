@@ -280,6 +280,7 @@ button {
 }
 
 .sidebar-brand strong,
+.brand-home-link,
 .nav-link,
 .logout-button {
   display: flex;
@@ -287,11 +288,20 @@ button {
   gap: 12px;
 }
 
-.sidebar-brand strong {
+.sidebar-brand strong,
+.brand-home-link {
+  color: var(--text);
   font-size: 18px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.brand-home-link:hover {
+  color: var(--primary);
 }
 
 .sidebar-brand svg,
+.brand-home-link svg,
 .nav-link svg,
 .logout-button svg,
 .page-title svg,
@@ -1005,6 +1015,7 @@ body.dark .primary-button {
 
 body.dark .nav-link,
 body.dark .logout-button,
+body.dark .brand-home-link,
 body.dark .sidebar-brand strong {
   color: #e8eef7;
 }
