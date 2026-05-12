@@ -377,17 +377,23 @@ function renderSchedulePage(bills) {
         .filter((bill) => bill.status === "unpaid")
         .map((bill) => BillService.paidOccurrenceKey(bill));
 
+      console.log("Sending reminders with unpaid occurrence keys:", unpaidOccurrenceKeys.length);
+
       const result = await api.sendReminders({
         paidOccurrences: StorageService.getPaidOccurrences(),
         unpaidOccurrenceKeys,
       });
+
+      console.log("Reminder result:", result);
+
       if (result.sent) {
-        setToast("Email sent");
-        openEmailSentPopup();
+        setToast(`Email sent with ${result.count} bill(s)`);
+        openEmailSentPopup(result.count);
       } else {
-        setToast(result.message || "Email was not sent.");
+        setToast(result.message || "Email was not sent. Please check your email configuration.");
       }
     } catch (error) {
+      console.error("Failed to send reminders:", error);
       setToast(error.message || "Failed to send reminders. Please try again.");
     }
   });

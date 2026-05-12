@@ -47,6 +47,9 @@ def get_reminders():
 @login_required
 def send_reminder_email():
     user = users.find_by_id(get_current_user_id())
+    if not user:
+        return jsonify({"sent": False, "count": 0, "message": "User not found"}), 404
+
     request_data = get_request_data()
     result = reminders.send_current_month_unpaid_email(
         user,

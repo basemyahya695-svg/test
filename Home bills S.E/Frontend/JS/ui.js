@@ -185,14 +185,18 @@ function openDueBillsPopup(reminders) {
   `);
 }
 
-function openEmailSentPopup() {
+function openEmailSentPopup(billCount = 0) {
+  const message = billCount > 0
+    ? `The email was sent successfully with ${billCount} unpaid bill${billCount !== 1 ? "s" : ""}.`
+    : "The email was sent successfully.";
+
   ModalService.open(`
     <section class="modal email-sent-modal" role="dialog" aria-modal="true" aria-labelledby="email-sent-title">
       <div class="modal-header">
         <h2 id="email-sent-title">Email sent</h2>
         <button class="icon-button" type="button" data-action="close-modal">x</button>
       </div>
-      <p class="modal-message">The email was sent successfully.</p>
+      <p class="modal-message">${message}</p>
       <div class="modal-actions">
         <button class="secondary-button" type="button" data-action="close-modal">OK</button>
       </div>

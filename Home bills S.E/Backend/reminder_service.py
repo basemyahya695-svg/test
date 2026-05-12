@@ -84,17 +84,25 @@ class ReminderService:
 
     def send_current_month_unpaid_email(self, user, paid_occurrences=None, unpaid_occurrences=None):
         reminders = self.current_month_unpaid_bills(user.id, paid_occurrences, unpaid_occurrences)
+        if not reminders:
+            return {
+                "sent": False,
+                "count": 0,
+                "message": "No unpaid bills for this month",
+                "bills": [],
+            }
+
         body = self.email_builder.monthly_unpaid_body(reminders)
 
         result = self.email_service.send(
             recipient=user.email,
-            subject="Monthly Unpaid Bills",
+            subject="MyHome Monthly Unpaid Bills",
             body=body,
         )
         return {
             "sent": result["sent"],
             "count": len(reminders),
-            "message": "Monthly unpaid bills email sent with bill type and payment status" if result["sent"] else result["error"],
+            "message": f"Sent {len(reminders)} unpaid bill(s) via email" if result["sent"] else result.get("error", "Failed to send email"),
             "bills": reminders,
         }
 
