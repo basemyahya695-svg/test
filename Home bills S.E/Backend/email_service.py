@@ -41,27 +41,26 @@ class EmailService:
         message.set_content(body)
 
         try:
-            if config.get("MAIL_USE_SSL", port == 465):
-                with smtplib.SMTP_SSL(server, port, timeout=20) as smtp:
-                    self.login_and_send(smtp, message, username, password)
-            else:
-                with smtplib.SMTP(server, port, timeout=20) as smtp:
-                    smtp.ehlo()
-                    if config.get("MAIL_USE_TLS", True):
-                        smtp.starttls()
-                        smtp.ehlo()
-                    self.login_and_send(smtp, message, username, password)
+            self.send_with_fallbacks(
+                message,
+                server,
+                port,
+                config.get("MAIL_USE_SSL", port == 465),
+                config.get("MAIL_USE_TLS", True),
+                username,
+                password,
+            )
         except smtplib.SMTPAuthenticationError:
             current_app.logger.exception("Email authentication failed")
             return {
                 "sent": False,
                 "error": "Gmail rejected the login. In Render, set MAIL_USERNAME to your Gmail address and MAIL_PASSWORD to a 16-character Gmail App Password, not your normal Gmail password.",
             }
-        except (smtplib.SMTPConnectError, smtplib.SMTPServerDisconnected, TimeoutError, OSError):
+        except (smtplib.SMTPConnectError, smtplib.SMTPServerDisconnected, TimeoutError, OSError) as error:
             current_app.logger.exception("Email connection failed")
             return {
                 "sent": False,
-                "error": "Could not connect to the mail server. Check MAIL_SERVER=smtp.gmail.com, MAIL_PORT=587, MAIL_USE_TLS=true, and redeploy.",
+                "error": f"Could not connect to the mail server ({type(error).__name__}: {error}). Try MAIL_SERVER=smtp.gmail.com, MAIL_PORT=465, MAIL_USE_SSL=true, MAIL_USE_TLS=false, then redeploy.",
             }
         except Exception as error:
             current_app.logger.exception("Email send failed")
@@ -72,6 +71,38 @@ class EmailService:
     @staticmethod
     def normalized_password(password):
         return "".join(str(password or "").split())
+
+    def send_with_fallbacks(self, message, server, port, use_ssl, use_tls, username, password):
+        attempts = [(port, use_ssl, use_tls)]
+        if server == "smtp.gmail.com" and (port, use_ssl, use_tls) != (465, True, False):
+            attempts.append((465, True, False))
+
+        last_error = None
+        for attempt_port, attempt_ssl, attempt_tls in attempts:
+            try:
+                self.send_attempt(message, server, attempt_port, attempt_ssl, attempt_tls, username, password)
+                return
+            except smtplib.SMTPAuthenticationError:
+                raise
+            except (smtplib.SMTPConnectError, smtplib.SMTPServerDisconnected, TimeoutError, OSError) as error:
+                last_error = error
+                current_app.logger.warning("Email send attempt failed on port %s", attempt_port, exc_info=True)
+
+        if last_error:
+            raise last_error
+
+    def send_attempt(self, message, server, port, use_ssl, use_tls, username, password):
+        if use_ssl:
+            with smtplib.SMTP_SSL(server, port, timeout=20) as smtp:
+                self.login_and_send(smtp, message, username, password)
+            return
+
+        with smtplib.SMTP(server, port, timeout=20) as smtp:
+            smtp.ehlo()
+            if use_tls:
+                smtp.starttls()
+                smtp.ehlo()
+            self.login_and_send(smtp, message, username, password)
 
     @staticmethod
     def login_and_send(smtp, message, username, password):
