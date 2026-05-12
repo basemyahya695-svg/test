@@ -945,6 +945,12 @@ body.dark .bill-card:hover {
   flex: 1;
 }
 
+.modal-message {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .reminder-modal {
   width: min(560px, 100%);
 }

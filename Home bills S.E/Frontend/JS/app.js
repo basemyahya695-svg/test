@@ -382,7 +382,12 @@ function renderSchedulePage(bills) {
         paidOccurrences: StorageService.getPaidOccurrences(),
         unpaidOccurrenceKeys,
       });
-      setToast(result.sent ? `Sent ${result.count} unpaid bill(s) by email` : result.message);
+      if (result.sent) {
+        setToast("Email sent");
+        openEmailSentPopup();
+      } else {
+        setToast(result.message);
+      }
     } catch (error) {
       setToast("Failed to send reminders. Please try again.");
     }
