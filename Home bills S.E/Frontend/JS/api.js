@@ -1,4 +1,6 @@
-const API_BASE_URL = "http://127.0.0.1:5000/api";
+const API_BASE_URL = window.location.hostname.endsWith("onrender.com")
+  ? `${window.location.origin}/api`
+  : "http://127.0.0.1:5000/api";
 
 async function apiRequest(path, options = {}) {
   let response;
@@ -12,7 +14,7 @@ async function apiRequest(path, options = {}) {
       ...options,
     });
   } catch (error) {
-    throw new Error("Cannot reach the backend. Make sure Flask is running on http://127.0.0.1:5000.");
+    throw new Error(`Cannot reach the backend at ${API_BASE_URL}.`);
   }
 
   const payload = await response.json().catch(() => ({}));

@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask
+from flask import Flask, redirect, url_for
 from flask_cors import CORS
 
 from auth_routes import auth_bp
@@ -10,8 +10,13 @@ from database import db
 from schedule_routes import schedule_bp
 from schema import ensure_schema
 
+FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Frontend"))
+if not os.path.isdir(FRONTEND_DIR):
+    FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "Frontend"))
+
+
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path="")
     app.config.from_object(Config)
 
     db.init_app(app)
@@ -25,6 +30,10 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(bills_bp)
     app.register_blueprint(schedule_bp)
+
+    @app.route("/")
+    def index():
+        return redirect(url_for("static", filename="Html/Login.html"))
 
     with app.app_context():
         db.create_all()
