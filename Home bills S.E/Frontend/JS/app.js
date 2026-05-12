@@ -386,20 +386,10 @@ function renderSchedulePage(bills) {
         setToast("Email sent");
         openEmailSentPopup();
       } else {
-        const message = result.message || "The email could not be sent. Check your email settings in Render.";
-        setToast(message);
-        openEmailStatusPopup({
-          title: "Email not sent",
-          message,
-        });
+        setToast(result.message);
       }
     } catch (error) {
-      const message = error.message || "Failed to send reminders. Please try again.";
-      setToast(message);
-      openEmailStatusPopup({
-        title: "Email not sent",
-        message,
-      });
+      setToast("Failed to send reminders. Please try again.");
     }
   });
   bindBillActions(bills, renderSchedulePage);

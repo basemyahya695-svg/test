@@ -155,15 +155,6 @@ function setToast(message) {
   window.setTimeout(() => toast.classList.remove("show"), TOAST_DURATION_MS);
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
 function openDueBillsPopup(reminders) {
   if (!reminders.length) return;
 
@@ -194,26 +185,19 @@ function openDueBillsPopup(reminders) {
   `);
 }
 
-function openEmailStatusPopup({ title, message, actionLabel = "OK" }) {
+function openEmailSentPopup() {
   ModalService.open(`
     <section class="modal email-sent-modal" role="dialog" aria-modal="true" aria-labelledby="email-sent-title">
       <div class="modal-header">
-        <h2 id="email-sent-title">${escapeHtml(title)}</h2>
+        <h2 id="email-sent-title">Email sent</h2>
         <button class="icon-button" type="button" data-action="close-modal">x</button>
       </div>
-      <p class="modal-message">${escapeHtml(message)}</p>
+      <p class="modal-message">The email was sent successfully.</p>
       <div class="modal-actions">
-        <button class="secondary-button" type="button" data-action="close-modal">${escapeHtml(actionLabel)}</button>
+        <button class="secondary-button" type="button" data-action="close-modal">OK</button>
       </div>
     </section>
   `);
-}
-
-function openEmailSentPopup() {
-  openEmailStatusPopup({
-    title: "Email sent",
-    message: "The email was sent successfully.",
-  });
 }
 
 function pagePath(file) {
