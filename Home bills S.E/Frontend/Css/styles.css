@@ -975,6 +975,26 @@ body.dark .bill-card:hover {
   color: var(--muted);
 }
 
+body.dark .modal {
+  color: var(--text);
+  background: #202833;
+  border: 1px solid var(--border);
+}
+
+body.dark .reminder-item {
+  color: #eef3f8;
+  background: #18202a;
+  border-color: color-mix(in srgb, var(--category-color) 72%, #ffffff);
+}
+
+body.dark .reminder-item h3 {
+  color: #ffffff;
+}
+
+body.dark .reminder-item p {
+  color: #d7e0eb;
+}
+
 .toast {
   position: fixed;
   right: 24px;
@@ -1071,32 +1091,6 @@ body.dark [data-action="edit-profile"]:hover {
   background: #475569;
   border-color: #cbd5e1;
   box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.2), 0 12px 30px rgba(148, 163, 184, 0.22);
-}
-
-body.dark .modal {
-  color: var(--text);
-  background: #202833;
-  border: 1px solid #3b4658;
-}
-
-body.dark .modal-header h2,
-body.dark .reminder-item h3 {
-  color: #f8fbff;
-}
-
-body.dark .reminder-item {
-  background: #18202a;
-  border-color: color-mix(in srgb, var(--category-color) 62%, #ffffff);
-  box-shadow: inset 4px 0 0 var(--category-color);
-}
-
-body.dark .reminder-item p {
-  color: #d9e2ef;
-}
-
-body.dark .reminder-item .category-icon {
-  background: color-mix(in srgb, var(--category-color) 28%, #101722) !important;
-  color: #ffffff !important;
 }
 
 [dir="rtl"] .bill-amount {

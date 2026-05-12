@@ -8,6 +8,13 @@ document.addEventListener("DOMContentLoaded", () => {
   if (page === "settings") bootAuthedPage(renderSettingsPage);
 });
 
+window.addEventListener("storage", (event) => {
+  const page = document.body.dataset.page;
+  if (event.key !== STORAGE_KEYS.billSync || !["home", "bills", "schedule"].includes(page)) return;
+  const renderer = { home: renderHomePage, bills: renderBillsPage, schedule: renderSchedulePage }[page];
+  bootAuthedPage(renderer);
+});
+
 let scheduleCalendarDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
 const copy = {
@@ -170,6 +177,14 @@ async function bootAuthedPage(renderer) {
   }
 }
 
+async function refreshPage(renderer) {
+  renderer(await api.bills());
+}
+
+function announceBillSync() {
+  StorageService.setValue(STORAGE_KEYS.billSync, String(Date.now()));
+}
+
 async function showAuthDueBillReminder(user) {
   const expectedUser = String(user.id || user.email || "current");
   if (sessionStorage.getItem(STORAGE_KEYS.showDueRemindersAfterAuth) !== expectedUser) return;
@@ -269,8 +284,9 @@ function bindBillActions(bills, renderer = renderBillsPage) {
       } else {
         await api.payBill(button.dataset.id);
       }
+      announceBillSync();
       setToast("Bill marked as paid");
-      bootAuthedPage(renderer);
+      await refreshPage(renderer);
     });
   });
 
@@ -282,8 +298,10 @@ function bindBillActions(bills, renderer = renderBillsPage) {
     button.addEventListener("click", async () => {
       if (!window.confirm("Delete this bill?")) return;
       await api.deleteBill(button.dataset.id);
+      BillService.clearPaidOccurrencesForBill(button.dataset.id);
+      announceBillSync();
       setToast("Bill deleted");
-      bootAuthedPage(renderer);
+      await refreshPage(renderer);
     });
   });
 }
@@ -312,9 +330,10 @@ function openBillEditor(bill, renderer = renderBillsPage) {
     } else {
       await api.addBill(payload);
     }
+    announceBillSync();
     modal.remove();
     setToast(bill ? "Bill updated" : "Bill added");
-    bootAuthedPage(renderer);
+    await refreshPage(renderer);
   });
 }
 
@@ -324,7 +343,6 @@ function renderSchedulePage(bills) {
   const oneYearFromNow = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
   const upcoming = BillService.expandForDateRange(bills, today, oneYearFromNow)
     .map((bill) => BillService.withOccurrenceStatus(bill))
-    .filter((bill) => bill.status === "unpaid")
     .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
   const baseDate = scheduleCalendarDate;
   renderShell("schedule", `
