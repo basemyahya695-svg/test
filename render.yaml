@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: myhome-backend
+    runtime: python
+    plan: free
+    rootDir: Home bills S.E/Backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: MAIL_SERVER
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_USE_SSL
+        value: "false"
+      - key: MAIL_USE_TLS
+        value: "true"

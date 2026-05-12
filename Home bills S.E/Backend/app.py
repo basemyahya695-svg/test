@@ -19,17 +19,7 @@ def create_app():
     CORS(
         app,
         supports_credentials=True,
-        origins=[
-            "http://127.0.0.1:8000",
-            "http://localhost:8000",
-            "http://127.0.0.1:5500",
-            "http://localhost:5500",
-            "http://127.0.0.1:5501",
-            "http://localhost:5501",
-            "http://127.0.0.1:5502",
-            "http://localhost:5502",
-            "null",
-        ],
+        origins=Config.CORS_ORIGINS,
     )
 
     app.register_blueprint(auth_bp)
@@ -42,7 +32,10 @@ def create_app():
 
     return app
 
+
+app = create_app()
+
+
 if __name__ == "__main__":
-    app = create_app()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
