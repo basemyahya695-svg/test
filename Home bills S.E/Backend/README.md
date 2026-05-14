@@ -27,6 +27,24 @@ http://127.0.0.1:8000/Html/Login.html
 
 Use the Sign Up tab to create an account, then use Login for returning users. The frontend verifies the active session through `/api/me`, and bills are stored through the Flask API for the signed-in user.
 
+## Seed Sample Data
+
+For a quick local demo, run the seed script after installing backend requirements:
+
+```powershell
+cd "D:\Home bills S.E\Backend"
+python seed_sample_data.py
+```
+
+It creates this demo login if it does not already exist:
+
+```text
+Email: demo@myhome.local
+Password: DemoPass123
+```
+
+The script also inserts a small set of unpaid rent, electricity, water, and internet bills for that demo user. It is safe to run more than once; it does not duplicate bills when the demo user already has sample bills.
+
 ## Email Reminders
 
 Reminder emails are sent for unpaid bills that are overdue, due today, or due within the configured reminder window. Set these environment variables before starting Flask:

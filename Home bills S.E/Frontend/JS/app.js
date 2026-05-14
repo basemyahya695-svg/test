@@ -37,6 +37,11 @@ const pageCopy = {
     addBill: "Add Bill",
     searchBills: "Search bills...",
     allCategories: "All Categories",
+    allFrequencies: "All Frequencies",
+    once: "One time",
+    weekly: "Weekly",
+    monthly: "Monthly",
+    yearly: "Yearly",
     paymentSchedule: "Payment Schedule",
     scheduleSubtitle: "View all bills organized by due date",
     totalBills: "Total Bills",
@@ -48,8 +53,8 @@ const pageCopy = {
     editProfile: "Edit Profile",
     settingsSubtitle: "Manage your preferences and notifications",
     noBillsFound: "No bills found.",
-    upcomingSchedule: "Upcoming Bills",
-    noFutureBills: "No upcoming unpaid bills.",
+    upcomingSchedule: "All Scheduled Bills",
+    noFutureBills: "No bills found.",
     previousMonth: "Previous month",
     nextMonth: "Next month",
     billType: "Bill Type",
@@ -90,6 +95,11 @@ const pageCopy = {
     addBill: "إضافة فاتورة",
     searchBills: "ابحث في الفواتير...",
     allCategories: "كل الفئات",
+    allFrequencies: "كل التكرارات",
+    once: "مرة واحدة",
+    weekly: "أسبوعي",
+    monthly: "شهري",
+    yearly: "سنوي",
     paymentSchedule: "جدول الدفع",
     scheduleSubtitle: "عرض الفواتير حسب تاريخ الاستحقاق",
     totalBills: "إجمالي الفواتير",
@@ -101,8 +111,8 @@ const pageCopy = {
     editProfile: "تعديل الملف",
     settingsSubtitle: "إدارة التفضيلات والتنبيهات",
     noBillsFound: "لا توجد فواتير.",
-    upcomingSchedule: "الفواتير القادمة",
-    noFutureBills: "لا توجد فواتير غير مدفوعة قادمة.",
+    upcomingSchedule: "كل الفواتير المجدولة",
+    noFutureBills: "لا توجد فواتير.",
     previousMonth: "الشهر السابق",
     nextMonth: "الشهر التالي",
     billType: "نوع الفاتورة",
@@ -241,7 +251,7 @@ function statCard(iconName, bg, color, value, label) {
 }
 
 function renderBillsPage(bills) {
-  const displayBills = BillService.forMonth(bills);
+  const displayBills = [...bills].sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
   renderShell("bills", `
     ${renderTopbar(translateNavigation("bills"), translatePageCopy("manageBills"), `<button class="secondary-button compact-button" type="button" data-action="add-bill">${icon("plus")} ${translatePageCopy("addBill")}</button>`)}
     <section class="search-row">
@@ -250,6 +260,10 @@ function renderBillsPage(bills) {
         <option value="all">${translatePageCopy("allCategories")}</option>
         ${Object.keys(billCategories).map((key) => `<option value="${key}">${translatePageCopy(key)}</option>`).join("")}
       </select>
+      <select data-frequency-filter>
+        <option value="all">${translatePageCopy("allFrequencies")}</option>
+        ${Object.values(BILL_FREQUENCIES).map((frequency) => `<option value="${frequency}">${translatePageCopy(frequency)}</option>`).join("")}
+      </select>
     </section>
     <section class="bill-list" data-bill-list></section>
   `);
@@ -257,13 +271,20 @@ function renderBillsPage(bills) {
   const list = document.querySelector("[data-bill-list]");
   const search = document.querySelector("[data-search]");
   const filter = document.querySelector("[data-filter]");
+  const frequencyFilter = document.querySelector("[data-frequency-filter]");
 
   const draw = () => {
     const query = search.value.trim().toLowerCase();
     const category = filter.value;
+    const frequency = frequencyFilter.value;
     const visible = displayBills.filter((bill) => {
       const billCategory = categoryForBill(bill).key;
-      return bill.name.toLowerCase().includes(query) && (category === "all" || billCategory === category);
+      const billFrequency = bill.frequency || BILL_FREQUENCIES.once;
+      return (
+        bill.name.toLowerCase().includes(query)
+        && (category === "all" || billCategory === category)
+        && (frequency === "all" || billFrequency === frequency)
+      );
     });
     list.innerHTML = visible.length ? visible.map(billCard).join("") : `<div class="empty-state">${translatePageCopy("noBillsFound")}</div>`;
     bindBillActions(bills, renderBillsPage);
@@ -272,6 +293,7 @@ function renderBillsPage(bills) {
   document.querySelector("[data-action='add-bill']").addEventListener("click", () => openBillEditor(null, renderBillsPage));
   search.addEventListener("input", draw);
   filter.addEventListener("change", draw);
+  frequencyFilter.addEventListener("change", draw);
   draw();
 }
 
@@ -343,11 +365,8 @@ function openBillEditor(bill, renderer = renderBillsPage) {
 }
 
 function renderSchedulePage(bills) {
-  const summary = BillService.getSummary(BillService.forMonth(bills));
-  const today = new Date(new Date().toDateString());
-  const scheduleEndDate = new Date(today.getFullYear() + SCHEDULE_LOOKAHEAD_YEARS, today.getMonth(), today.getDate());
-  const upcoming = BillService.expandForDateRange(bills, today, scheduleEndDate)
-    .map((bill) => BillService.withOccurrenceStatus(bill))
+  const summary = BillService.getSummary(bills);
+  const scheduledBills = [...bills]
     .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
   const baseDate = scheduleCalendarDate;
   renderShell("schedule", `
@@ -360,7 +379,7 @@ function renderSchedulePage(bills) {
     ${scheduleCalendar(bills, baseDate)}
     <h2 class="schedule-month">${translatePageCopy("upcomingSchedule")}</h2>
     <section class="schedule-list">
-      ${upcoming.map(scheduleItem).join("") || `<div class="empty-state">${translatePageCopy("noFutureBills")}</div>`}
+      ${scheduledBills.map(scheduleItem).join("") || `<div class="empty-state">${translatePageCopy("noFutureBills")}</div>`}
     </section>
   `);
 
