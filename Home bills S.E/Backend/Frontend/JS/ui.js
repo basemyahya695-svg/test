@@ -24,7 +24,7 @@ const billCategories = {
   other: { key: "other", icon: "fileText", label: "other", color: "#64748b", bg: "#e9eef5", hover: "#f5f7fa" },
 };
 
-const translations = {
+const navigationTranslations = {
   en: {
     home: "Home",
     bills: "Bills",
@@ -75,9 +75,9 @@ function currentLanguage() {
   return localStorage.getItem("myhome:language") || "en";
 }
 
-function t(key) {
+function translateNavigation(key) {
   const language = currentLanguage();
-  return translations[language]?.[key] || translations.en[key] || key;
+  return navigationTranslations[language]?.[key] || navigationTranslations.en[key] || key;
 }
 
 function icon(name, className = "") {
@@ -140,8 +140,7 @@ function isOverdue(bill) {
 }
 
 function daysOverdue(bill) {
-  const msPerDay = 24 * 60 * 60 * 1000;
-  return Math.max(0, Math.ceil((new Date(new Date().toDateString()) - parseDate(bill.due_date)) / msPerDay));
+  return Math.max(0, Math.ceil((new Date(new Date().toDateString()) - parseDate(bill.due_date)) / MS_PER_DAY));
 }
 
 function setToast(message) {
@@ -167,7 +166,7 @@ function renderShell(activePage, content) {
   const nav = pages.map((page) => `
     <a class="nav-link ${page.key === activePage ? "active" : ""}" href="${pagePath(page.file)}">
       ${icon(page.icon)}
-      <span>${t(page.key)}</span>
+      <span>${translateNavigation(page.key)}</span>
     </a>
   `).join("");
 
@@ -176,11 +175,11 @@ function renderShell(activePage, content) {
       <aside class="sidebar">
         <div class="sidebar-brand">
           <strong>${icon("home")} MyHome</strong>
-          <small>${t("household")}</small>
+          <small>${translateNavigation("household")}</small>
         </div>
         <nav class="nav">${nav}</nav>
         <div class="logout-wrap">
-          <button class="logout-button" type="button" data-action="logout">${icon("logOut")} ${t("logout")}</button>
+          <button class="logout-button" type="button" data-action="logout">${icon("logOut")} ${translateNavigation("logout")}</button>
         </div>
       </aside>
       <main class="main-content">${content}</main>
@@ -218,7 +217,7 @@ function billCard(bill) {
       <div class="bill-main">
         <h3>
           ${bill.name}
-          <span class="badge category">${l(category.key)}</span>
+          <span class="badge category">${translatePageCopy(category.key)}</span>
           <span class="badge ${bill.status}">${bill.status}</span>
           <span class="badge recurring">${bill.frequency === "once" ? "One time" : "Recurring"}</span>
         </h3>
@@ -245,9 +244,9 @@ function createBillModal(bill = null) {
         <button class="icon-button" type="button" data-action="close-modal">×</button>
       </div>
       <label class="field">Bill Name<input name="name" required value="${bill?.name || ""}" placeholder="Electricity Bill"></label>
-      <label class="field">${l("billType") || "Bill Type"}
+      <label class="field">${translatePageCopy("billType") || "Bill Type"}
         <select name="category">
-          ${Object.keys(billCategories).map((item) => `<option value="${item}" ${bill?.category === item ? "selected" : ""}>${l(item)}</option>`).join("")}
+          ${Object.keys(billCategories).map((item) => `<option value="${item}" ${bill?.category === item ? "selected" : ""}>${translatePageCopy(item)}</option>`).join("")}
         </select>
       </label>
       <label class="field">Amount<input name="amount" type="text" inputmode="decimal" required value="${bill?.amount || ""}" placeholder="125.50"></label>

@@ -24,7 +24,7 @@ const billCategories = {
   other: { key: "other", icon: "fileText", label: "other", color: "#475569", bg: "#e9eef5", hover: "#dbe4ef" },
 };
 
-const translations = {
+const navigationTranslations = {
   en: {
     home: "Home",
     bills: "Bills",
@@ -75,9 +75,9 @@ function currentLanguage() {
   return StorageService.getValue(STORAGE_KEYS.language, "en");
 }
 
-function t(key) {
+function translateNavigation(key) {
   const language = currentLanguage();
-  return translations[language]?.[key] || translations.en[key] || key;
+  return navigationTranslations[language]?.[key] || navigationTranslations.en[key] || key;
 }
 
 function icon(name, className = "") {
@@ -215,7 +215,7 @@ function renderShell(activePage, content) {
   const nav = pages.map((page) => `
     <a class="nav-link ${page.key === activePage ? "active" : ""}" href="${pagePath(page.file)}">
       ${icon(page.icon)}
-      <span>${t(page.key)}</span>
+      <span>${translateNavigation(page.key)}</span>
     </a>
   `).join("");
 
@@ -224,11 +224,11 @@ function renderShell(activePage, content) {
       <aside class="sidebar">
         <div class="sidebar-brand">
           <a class="brand-home-link" href="${pagePath("Home.html")}" aria-label="Go to Home">${icon("home")} MyHome</a>
-          <small>${t("household")}</small>
+          <small>${translateNavigation("household")}</small>
         </div>
         <nav class="nav">${nav}</nav>
         <div class="logout-wrap">
-          <button class="logout-button" type="button" data-action="logout">${icon("logOut")} ${t("logout")}</button>
+          <button class="logout-button" type="button" data-action="logout">${icon("logOut")} ${translateNavigation("logout")}</button>
         </div>
       </aside>
       <main class="main-content">${content}</main>
@@ -266,7 +266,7 @@ function billCard(bill) {
       <div class="bill-main">
         <h3>
           ${bill.name}
-          <span class="badge category">${l(category.key)}</span>
+          <span class="badge category">${translatePageCopy(category.key)}</span>
           <span class="badge ${bill.status}">${bill.status}</span>
           <span class="badge recurring">${bill.frequency === "once" ? "One time" : "Recurring"}</span>
           ${bill.frequency === "weekly" ? `<span class="badge occurrence">Weekly due date</span>` : ""}
@@ -292,9 +292,9 @@ function createBillModal(bill = null) {
         <button class="icon-button" type="button" data-action="close-modal">×</button>
       </div>
       <label class="field">Bill Name<input name="name" required value="${bill?.name || ""}" placeholder="Electricity Bill"></label>
-      <label class="field">${l("billType") || "Bill Type"}
+      <label class="field">${translatePageCopy("billType") || "Bill Type"}
         <select name="category">
-          ${Object.keys(billCategories).map((categoryKey) => `<option value="${categoryKey}" ${bill?.category === categoryKey ? "selected" : ""}>${l(categoryKey)}</option>`).join("")}
+          ${Object.keys(billCategories).map((categoryKey) => `<option value="${categoryKey}" ${bill?.category === categoryKey ? "selected" : ""}>${translatePageCopy(categoryKey)}</option>`).join("")}
         </select>
       </label>
       <label class="field">Amount<input name="amount" type="text" inputmode="decimal" required value="${bill?.amount || ""}" placeholder="125.50"></label>

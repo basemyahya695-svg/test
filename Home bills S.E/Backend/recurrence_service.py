@@ -9,6 +9,13 @@ JANUARY = 1
 
 
 class RecurrenceService:
+    def __init__(self, frequency_strategies=None):
+        self.frequency_strategies = frequency_strategies or {
+            "weekly": self.add_week,
+            "monthly": self.add_month,
+            "yearly": self.add_year,
+        }
+
     def expand_due_dates(self, bill, start_date, end_date):
         due_date = bill.due_date
         frequency = bill.frequency or DEFAULT_BILL_FREQUENCY
@@ -16,11 +23,7 @@ class RecurrenceService:
         if frequency == DEFAULT_BILL_FREQUENCY:
             return [due_date] if due_date <= end_date else []
 
-        next_date = {
-            "weekly": self.add_week,
-            "monthly": self.add_month,
-            "yearly": self.add_year,
-        }.get(frequency)
+        next_date = self.frequency_strategies.get(frequency)
 
         if not next_date:
             return [due_date] if due_date <= end_date else []

@@ -17,7 +17,7 @@ window.addEventListener("storage", (event) => {
 
 let scheduleCalendarDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
-const copy = {
+const pageCopy = {
   en: {
     dashboard: "Dashboard",
     dashboardSubtitle: "Overview of your household bills",
@@ -126,8 +126,8 @@ const copy = {
   },
 };
 
-function l(key) {
-  return copy[currentLanguage()]?.[key] || copy.en[key] || key;
+function translatePageCopy(key) {
+  return pageCopy[currentLanguage()]?.[key] || pageCopy.en[key] || key;
 }
 
 function renderLoginPage() {
@@ -207,19 +207,19 @@ function renderHomePage(bills) {
     .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
 
   renderShell("home", `
-    ${renderTopbar(l("dashboard"), l("dashboardSubtitle"))}
+    ${renderTopbar(translatePageCopy("dashboard"), translatePageCopy("dashboardSubtitle"))}
     <section class="stats-grid">
-      ${statCard("dollar", "#dceaff", "#155dff", formatCurrency(summary.total), l("totalMonthly"))}
-      ${statCard("alert", "#ffe9ca", "#ff5b18", summary.unpaid, l("unpaidBills"))}
-      ${statCard("check", "#d9fbe6", "#00a84f", summary.paid, l("paidBills"))}
-      ${statCard("trend", "#ffe0e0", "#ff2424", summary.overdue, l("overdueBills"))}
+      ${statCard("dollar", "#dceaff", "#155dff", formatCurrency(summary.total), translatePageCopy("totalMonthly"))}
+      ${statCard("alert", "#ffe9ca", "#ff5b18", summary.unpaid, translatePageCopy("unpaidBills"))}
+      ${statCard("check", "#d9fbe6", "#00a84f", summary.paid, translatePageCopy("paidBills"))}
+      ${statCard("trend", "#ffe0e0", "#ff2424", summary.overdue, translatePageCopy("overdueBills"))}
     </section>
     <section class="content-card">
       <div class="section-heading">
-        <h2 class="section-title">${icon("calendar")} ${l("upcomingBills")}</h2>
-        <a class="ghost-button" href="Bills.html">${l("viewAll")}</a>
+        <h2 class="section-title">${icon("calendar")} ${translatePageCopy("upcomingBills")}</h2>
+        <a class="ghost-button" href="Bills.html">${translatePageCopy("viewAll")}</a>
       </div>
-      ${upcoming.length ? `<div class="bill-list">${upcoming.map(billCard).join("")}</div>` : `<div class="empty-state">${l("noUpcoming")}</div>`}
+      ${upcoming.length ? `<div class="bill-list">${upcoming.map(billCard).join("")}</div>` : `<div class="empty-state">${translatePageCopy("noUpcoming")}</div>`}
     </section>
   `);
   bindBillActions(bills, renderHomePage);
@@ -238,12 +238,12 @@ function statCard(iconName, bg, color, value, label) {
 function renderBillsPage(bills) {
   const displayBills = BillService.forMonth(bills);
   renderShell("bills", `
-    ${renderTopbar(t("bills"), l("manageBills"), `<button class="secondary-button compact-button" type="button" data-action="add-bill">${icon("plus")} ${l("addBill")}</button>`)}
+    ${renderTopbar(translateNavigation("bills"), translatePageCopy("manageBills"), `<button class="secondary-button compact-button" type="button" data-action="add-bill">${icon("plus")} ${translatePageCopy("addBill")}</button>`)}
     <section class="search-row">
-      <input data-search type="search" placeholder="${l("searchBills")}">
+      <input data-search type="search" placeholder="${translatePageCopy("searchBills")}">
       <select data-filter>
-        <option value="all">${l("allCategories")}</option>
-        ${Object.keys(billCategories).map((key) => `<option value="${key}">${l(key)}</option>`).join("")}
+        <option value="all">${translatePageCopy("allCategories")}</option>
+        ${Object.keys(billCategories).map((key) => `<option value="${key}">${translatePageCopy(key)}</option>`).join("")}
       </select>
     </section>
     <section class="bill-list" data-bill-list></section>
@@ -260,7 +260,7 @@ function renderBillsPage(bills) {
       const billCategory = categoryForBill(bill).key;
       return bill.name.toLowerCase().includes(query) && (category === "all" || billCategory === category);
     });
-    list.innerHTML = visible.length ? visible.map(billCard).join("") : `<div class="empty-state">${l("noBillsFound")}</div>`;
+    list.innerHTML = visible.length ? visible.map(billCard).join("") : `<div class="empty-state">${translatePageCopy("noBillsFound")}</div>`;
     bindBillActions(bills, renderBillsPage);
   };
 
@@ -346,16 +346,16 @@ function renderSchedulePage(bills) {
     .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
   const baseDate = scheduleCalendarDate;
   renderShell("schedule", `
-    ${renderTopbar(l("paymentSchedule"), l("scheduleSubtitle"))}
+    ${renderTopbar(translatePageCopy("paymentSchedule"), translatePageCopy("scheduleSubtitle"))}
     <section class="stats-grid three">
-      ${statCard("calendar", "#ffffff", "#155dff", bills.length, l("totalBills"))}
-      ${statCard("dollar", "#ffffff", "#00a84f", formatCurrency(summary.total), l("monthlyTotal"))}
-      ${statCard("alert", "#ffffff", "#ff5b18", formatCurrency(summary.unpaidAmount), l("unpaidAmount"))}
+      ${statCard("calendar", "#ffffff", "#155dff", bills.length, translatePageCopy("totalBills"))}
+      ${statCard("dollar", "#ffffff", "#00a84f", formatCurrency(summary.total), translatePageCopy("monthlyTotal"))}
+      ${statCard("alert", "#ffffff", "#ff5b18", formatCurrency(summary.unpaidAmount), translatePageCopy("unpaidAmount"))}
     </section>
     ${scheduleCalendar(bills, baseDate)}
-    <h2 class="schedule-month">${l("upcomingSchedule")}</h2>
+    <h2 class="schedule-month">${translatePageCopy("upcomingSchedule")}</h2>
     <section class="schedule-list">
-      ${upcoming.map(scheduleItem).join("") || `<div class="empty-state">${l("noFutureBills")}</div>`}
+      ${upcoming.map(scheduleItem).join("") || `<div class="empty-state">${translatePageCopy("noFutureBills")}</div>`}
     </section>
   `);
 
@@ -430,9 +430,9 @@ function scheduleCalendar(bills, baseDate) {
       <div class="section-heading">
         <h2 class="section-title">${baseDate.toLocaleDateString(currentLanguage() === "ar" ? "ar" : "en-US", { month: "long", year: "numeric" })}</h2>
         <div class="calendar-actions">
-          <button class="icon-button" type="button" aria-label="${l("previousMonth")}" title="${l("previousMonth")}" data-action="previous-month">‹</button>
-          <button class="icon-button" type="button" aria-label="${l("nextMonth")}" title="${l("nextMonth")}" data-action="next-month">›</button>
-          <button class="ghost-button compact-button" type="button" data-action="send-reminders">${icon("mail")} ${l("emailReminders")}</button>
+          <button class="icon-button" type="button" aria-label="${translatePageCopy("previousMonth")}" title="${translatePageCopy("previousMonth")}" data-action="previous-month">‹</button>
+          <button class="icon-button" type="button" aria-label="${translatePageCopy("nextMonth")}" title="${translatePageCopy("nextMonth")}" data-action="next-month">›</button>
+          <button class="ghost-button compact-button" type="button" data-action="send-reminders">${icon("mail")} ${translatePageCopy("emailReminders")}</button>
         </div>
       </div>
       <div class="calendar-weekdays">
@@ -456,7 +456,7 @@ function scheduleItem(bill) {
       </div>
       <div class="category-icon" style="background:${category.bg};color:${category.color}">${icon(category.icon)}</div>
       <div class="schedule-main">
-        <h3>${bill.name}<span class="badge category">${l(category.key)}</span><span class="badge frequency">${bill.frequency === "once" ? "One time" : "Recurring"}</span></h3>
+        <h3>${bill.name}<span class="badge category">${translatePageCopy(category.key)}</span><span class="badge frequency">${bill.frequency === "once" ? "One time" : "Recurring"}</span></h3>
         <strong class="${bill.status === "paid" ? "active-text" : ""}" style="color:${bill.status === "paid" ? "var(--success)" : overdue ? "red" : "var(--warning)"}">
           ${statusText}
         </strong>
@@ -493,14 +493,14 @@ function renderProfilePage() {
   const address = profile.address || "123 Main Street, Anytown, USA";
 
   renderShell("profile", `
-    ${renderTopbar(t("profile"), l("profileSubtitle"))}
+    ${renderTopbar(translateNavigation("profile"), translatePageCopy("profileSubtitle"))}
     <section class="profile-card">
       <div class="profile-header">
         <div class="profile-person">
           <div class="avatar">${icon("user")}</div>
           <div><h2>${name}</h2><p>${email}</p></div>
         </div>
-        <button class="secondary-button compact-button" type="button" data-action="edit-profile">${icon("edit")} ${l("editProfile")}</button>
+        <button class="secondary-button compact-button" type="button" data-action="edit-profile">${icon("edit")} ${translatePageCopy("editProfile")}</button>
       </div>
       ${profileField("user", "Full Name", name)}
       ${profileField("mail", "Email Address", email)}
@@ -551,29 +551,29 @@ function renderSettingsPage() {
   const dark = StorageService.getBoolean(STORAGE_KEYS.darkMode);
   renderShell("settings", `
     <section class="settings-page">
-      ${renderTopbar(`${icon("settings")} ${t("settings")}`, l("settingsSubtitle"))}
+      ${renderTopbar(`${icon("settings")} ${translateNavigation("settings")}`, translatePageCopy("settingsSubtitle"))}
       <section class="content-card settings-stack">
-        <h2 class="section-title">${icon("bell")} ${l("notifications")}</h2>
-        ${settingToggle(l("emailNotifications"), l("emailNotificationsHelp"), "email", settings.email ?? true)}
-        ${settingToggle(l("pushNotifications"), l("pushNotificationsHelp"), "push", settings.push ?? true)}
-        ${settingToggle(l("billReminders"), l("billRemindersHelp"), "reminders", settings.reminders ?? true)}
+        <h2 class="section-title">${icon("bell")} ${translatePageCopy("notifications")}</h2>
+        ${settingToggle(translatePageCopy("emailNotifications"), translatePageCopy("emailNotificationsHelp"), "email", settings.email ?? true)}
+        ${settingToggle(translatePageCopy("pushNotifications"), translatePageCopy("pushNotificationsHelp"), "push", settings.push ?? true)}
+        ${settingToggle(translatePageCopy("billReminders"), translatePageCopy("billRemindersHelp"), "reminders", settings.reminders ?? true)}
         <label class="setting-row">
-          <span><strong>${l("reminderDays")}</strong><span class="setting-subtitle">${l("reminderDaysHelp")}</span></span>
+          <span><strong>${translatePageCopy("reminderDays")}</strong><span class="setting-subtitle">${translatePageCopy("reminderDaysHelp")}</span></span>
           <input class="number-input" data-setting="days" type="number" min="${REMINDER_DAYS_MIN}" max="${REMINDER_DAYS_MAX}" value="${settings.days || REMINDER_DAYS_DEFAULT}">
         </label>
       </section>
       <section class="content-card settings-stack" style="margin-top:24px">
-        <h2 class="section-title">${icon("moon")} ${l("appearance")}</h2>
-        ${settingToggle(l("darkMode"), l("darkModeHelp"), "dark", dark)}
+        <h2 class="section-title">${icon("moon")} ${translatePageCopy("appearance")}</h2>
+        ${settingToggle(translatePageCopy("darkMode"), translatePageCopy("darkModeHelp"), "dark", dark)}
         <label class="setting-row">
-          <span><strong>${l("language")}</strong><span class="setting-subtitle">${l("languageHelp")}</span></span>
+          <span><strong>${translatePageCopy("language")}</strong><span class="setting-subtitle">${translatePageCopy("languageHelp")}</span></span>
           <select class="select-input" data-setting="language">
             <option value="en" ${currentLanguage() === "en" ? "selected" : ""}>English</option>
             <option value="ar" ${currentLanguage() === "ar" ? "selected" : ""}>العربية</option>
           </select>
         </label>
         <label class="setting-row">
-          <span><strong>${l("currency")}</strong><span class="setting-subtitle">${l("currencyHelp")}</span></span>
+          <span><strong>${translatePageCopy("currency")}</strong><span class="setting-subtitle">${translatePageCopy("currencyHelp")}</span></span>
           <select class="select-input" data-setting="currency">
             ${Object.keys(currencies).map((currencyCode) => `<option value="${currencyCode}" ${preferredCurrency() === currencyCode ? "selected" : ""}>${currencyCode}</option>`).join("")}
           </select>

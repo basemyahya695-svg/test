@@ -3,11 +3,14 @@ import os
 from flask import Flask, redirect, url_for
 from flask_cors import CORS
 
-from auth_routes import auth_bp
-from bill_routes import bills_bp
+from auth_routes import create_auth_blueprint
+from auth_service import AuthService, UserRepository
+from bill_routes import create_bills_blueprint
+from bill_service import BillService
 from config import API_DEFAULT_PORT, Config
 from database import db
-from schedule_routes import schedule_bp
+from reminder_service import ReminderService
+from schedule_routes import create_schedule_blueprint
 from schema import ensure_schema
 
 FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Frontend"))
@@ -19,27 +22,41 @@ def create_app():
     app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path="")
     app.config.from_object(Config)
 
-    db.init_app(app)
+    register_extensions(app)
+    register_routes(app)
+    initialize_database(app)
 
+    return app
+
+
+def register_extensions(app):
+    db.init_app(app)
     CORS(
         app,
         supports_credentials=True,
         origins=Config.CORS_ORIGINS,
     )
 
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(bills_bp)
-    app.register_blueprint(schedule_bp)
+
+def register_routes(app):
+    auth_service = AuthService()
+    bill_service = BillService()
+    reminder_service = ReminderService()
+    user_repository = UserRepository()
+
+    app.register_blueprint(create_auth_blueprint(auth_service, reminder_service))
+    app.register_blueprint(create_bills_blueprint(bill_service))
+    app.register_blueprint(create_schedule_blueprint(bill_service, reminder_service, user_repository))
 
     @app.route("/")
     def index():
         return redirect(url_for("static", filename="Html/Login.html"))
 
+
+def initialize_database(app):
     with app.app_context():
         db.create_all()
         ensure_schema()
-
-    return app
 
 
 app = create_app()

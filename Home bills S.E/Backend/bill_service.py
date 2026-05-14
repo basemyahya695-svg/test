@@ -35,6 +35,10 @@ class BillRepository:
 class BillPayloadValidator:
     REQUIRED_CREATE_FIELDS = ("name", "amount", "due_date", "frequency")
 
+    def __init__(self, valid_categories=None, valid_currencies=None):
+        self.valid_categories = valid_categories or VALID_BILL_CATEGORIES
+        self.valid_currencies = valid_currencies or VALID_CURRENCIES
+
     def build_create_payload(self, data):
         required_error = validate_required_fields(data, self.REQUIRED_CREATE_FIELDS)
         if required_error:
@@ -71,19 +75,17 @@ class BillPayloadValidator:
             raise ValueError("Amount must be greater than zero")
         return amount
 
-    @staticmethod
-    def validate_category(value):
+    def validate_category(self, value):
         category = str(value).lower()
-        if category not in VALID_BILL_CATEGORIES:
-            valid_categories = ", ".join(sorted(VALID_BILL_CATEGORIES))
+        if category not in self.valid_categories:
+            valid_categories = ", ".join(sorted(self.valid_categories))
             raise ValueError(f"Invalid bill type. Use one of: {valid_categories}")
         return category
 
-    @staticmethod
-    def validate_currency(value):
+    def validate_currency(self, value):
         currency = str(value).upper()
-        if currency not in VALID_CURRENCIES:
-            valid_currencies = ", ".join(sorted(VALID_CURRENCIES))
+        if currency not in self.valid_currencies:
+            valid_currencies = ", ".join(sorted(self.valid_currencies))
             raise ValueError(f"Invalid currency. Use one of: {valid_currencies}")
         return currency
 

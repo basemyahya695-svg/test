@@ -94,6 +94,10 @@ const BillService = {
     return dates;
   },
 
+  registerFrequencyStrategy(frequency, strategy) {
+    this.frequencyStrategies[frequency] = strategy;
+  },
+
   forMonth(bills, baseDate = new Date()) {
     const monthStart = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
     const monthEnd = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
