@@ -1,61 +1,114 @@
 # MyHome Household Bills
 
-Clean HTML, CSS, and JavaScript frontend for the Flask backend in `Backend`.
+MyHome is a working MVP for managing household bills. Users can create an account, sign in, add bills, filter bills by category and frequency, mark bills as paid, view a payment schedule, and send reminder emails for unpaid bills.
 
-## Run The Backend
+## Tools And Technologies
+
+- Frontend: HTML, CSS, and vanilla JavaScript
+- Backend: Python, Flask, Flask-CORS, Flask-SQLAlchemy
+- Database: SQLite
+- Email: SMTP through Python `smtplib`
+- Deployment support: `gunicorn` and `render.yaml`
+
+## Project Structure
+
+```text
+Home bills S.E/
+  Backend/      Flask API, database models, services, and seed script
+  Frontend/     Main HTML/CSS/JavaScript frontend
+```
+
+## Setup Requirements
+
+Install Python 3.10 or newer. The project does not require Node.js or a frontend build step.
+
+Install backend dependencies:
 
 ```powershell
-cd "D:\Home bills S.E\Backend"
+cd "<project-folder>\Home bills S.E\Backend"
 python -m pip install -r requirements.txt
+```
+
+Replace `<project-folder>` with the folder where you downloaded or cloned the repository.
+
+## Launch Working Prototype / MVP
+
+Open two terminals.
+
+### 1. Run The Backend
+
+```powershell
+cd "<project-folder>\Home bills S.E\Backend"
 python app.py
 ```
 
-If `python` points to an environment without Flask, use the Python installation where the requirements were installed.
+The backend runs at:
 
-## Run The Frontend
+```text
+http://127.0.0.1:5000
+```
+
+### 2. Run The Frontend
 
 ```powershell
-cd "D:\Home bills S.E\Frontend"
+cd "<project-folder>\Home bills S.E\Frontend"
 python -m http.server 8000
 ```
 
-Open:
+Open this URL in a browser:
 
 ```text
 http://127.0.0.1:8000/Html/Login.html
 ```
 
-Use the Sign Up tab to create an account, then use Login for returning users. The frontend verifies the active session through `/api/me`, and bills are stored through the Flask API for the signed-in user.
+## How To Use The Project
 
-## Seed Sample Data
+1. Open the Login page.
+2. Use the Sign Up tab to create a new account.
+3. After logging in, use the sidebar to move between Dashboard, Bills, Schedule, Profile, and Settings.
+4. On the Bills page, add bills with a name, category, amount, currency, due date, and frequency.
+5. Filter bills by search text, category, or frequency.
+6. Mark unpaid bills as paid using the check button.
+7. Use the Schedule page to view all scheduled bills and the monthly calendar.
+8. Use the email reminder button on the Schedule page to send unpaid bill reminders if email settings are configured.
 
-For a quick local demo, run the seed script after installing backend requirements:
+## Sample Data
+
+For a quick demo, seed a sample account and sample bills:
 
 ```powershell
-cd "D:\Home bills S.E\Backend"
+cd "<project-folder>\Home bills S.E\Backend"
 python seed_sample_data.py
 ```
 
-It creates this demo login if it does not already exist:
+Demo login:
 
 ```text
 Email: demo@myhome.local
 Password: DemoPass123
 ```
 
-The script also inserts a small set of unpaid rent, electricity, water, and internet bills for that demo user. It is safe to run more than once; it does not duplicate bills when the demo user already has sample bills.
+The seed script is safe to run more than once. It creates the demo user if missing and does not duplicate sample bills when that user already has bills.
 
-## Email Reminders
+## Optional Email Setup
 
-Reminder emails are sent for unpaid bills that are overdue, due today, or due within the configured reminder window. Set these environment variables before starting Flask:
+Reminder emails use SMTP. Set these environment variables before starting the backend:
 
 ```powershell
 $env:MAIL_SERVER="smtp.example.com"
 $env:MAIL_PORT="587"
-$env:MAIL_USERNAME="tariqiskandar2@gmail.com"
-$env:MAIL_PASSWORD="your-password"
-$env:MAIL_FROM="tariqiskandar2@gmail.com"
+$env:MAIL_USERNAME="your-email@example.com"
+$env:MAIL_PASSWORD="your-smtp-or-app-password"
+$env:MAIL_FROM="your-email@example.com"
 $env:MAIL_USE_TLS="true"
+python app.py
 ```
 
-If mail settings are missing, the backend safely logs the reminder instead of failing the app.
+If email settings are not configured, the rest of the app still works.
+
+## Troubleshooting
+
+- If the frontend does not load data, make sure the backend is running at `http://127.0.0.1:5000`.
+- If `python` cannot find Flask, run `python -m pip install -r requirements.txt` inside the `Backend` folder.
+- If port `8000` is busy, run the frontend on another port, for example `python -m http.server 8001`, then open `http://127.0.0.1:8001/Html/Login.html`.
+- If old JavaScript appears in the browser, refresh with `Ctrl+F5`.
