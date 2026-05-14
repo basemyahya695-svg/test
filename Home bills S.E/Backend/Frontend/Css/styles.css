@@ -30,6 +30,10 @@ body {
   color: var(--text);
 }
 
+[dir="rtl"] body {
+  font-family: Tahoma, "Segoe UI", Arial, sans-serif;
+}
+
 button,
 input,
 select {
@@ -699,6 +703,26 @@ body.dark .bill-card:hover {
   gap: 24px;
   min-height: 84px;
   border-bottom: 1px solid #edf0f4;
+}
+
+.setting-row > span:first-child {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.setting-row strong,
+.setting-subtitle {
+  line-height: 1.5;
+}
+
+.setting-subtitle {
+  display: block;
+}
+
+[dir="rtl"] .settings-page {
+  text-align: right;
+  word-spacing: 0.08em;
 }
 
 .setting-row:last-child {
