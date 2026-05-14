@@ -55,7 +55,9 @@ class Config:
 
 API_DEFAULT_PORT = 5000
 SMTP_SSL_PORT = 465
+# Two weeks is enough lead time for rent reminders without creating early noise.
 EMAIL_REMINDER_DAYS_AHEAD = 14
+# Popup reminders stay short-term so they feel urgent and actionable in the dashboard.
 POPUP_REMINDER_DAYS_AHEAD = 3
 DATE_FORMAT = "%Y-%m-%d"
 BILL_STATUS_UNPAID = "unpaid"

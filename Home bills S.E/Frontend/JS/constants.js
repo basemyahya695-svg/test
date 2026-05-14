@@ -5,6 +5,7 @@ const TOAST_DURATION_MS = 2800;
 const REMINDER_DAYS_MIN = 1;
 const REMINDER_DAYS_MAX = 30;
 const REMINDER_DAYS_DEFAULT = 3;
+// Schedule and reminder windows stay bounded so recurring bills do not flood the UI/email payload.
 const SCHEDULE_LOOKAHEAD_YEARS = 1;
 const REMINDER_LOOKBACK_MONTHS = 2;
 

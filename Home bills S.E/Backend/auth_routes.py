@@ -3,7 +3,8 @@ from flask import Blueprint, jsonify
 from auth_service import AuthService
 from auth_validation import validate_login, validate_signup
 from reminder_service import ReminderService
-from utils import get_request_data, error_response, success_response
+from response_utils import error_response, get_request_data, success_response
+from session_utils import UNAUTHORIZED_MESSAGE
 
 
 def auth_response(message, user, status_code=200):
@@ -56,7 +57,7 @@ def create_auth_blueprint(auth_service=None, reminder_service=None):
     def get_current_user():
         user = auth_service.current_user()
         if not user:
-            return error_response("Unauthorized access", 401)
+            return error_response(UNAUTHORIZED_MESSAGE, 401)
 
         return jsonify({"user": user.to_dict()}), 200
 

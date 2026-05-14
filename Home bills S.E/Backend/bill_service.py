@@ -8,8 +8,9 @@ from config import (
     VALID_CURRENCIES,
 )
 from database import db
+from date_utils import format_date, parse_date
 from models import Bill
-from utils import format_date, parse_date, validate_frequency, validate_required_fields
+from validation_utils import validate_frequency, validate_required_fields
 
 
 class BillRepository:

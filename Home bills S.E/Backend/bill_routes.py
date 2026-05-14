@@ -2,14 +2,9 @@ from flask import Blueprint, jsonify
 
 from bill_service import BillService, serialize_bill
 from config import DEFAULT_BILL_CURRENCY, EXCHANGE_RATES
-from utils import (
-    convert_currency,
-    error_response,
-    get_current_user_id,
-    get_request_data,
-    login_required,
-    success_response,
-)
+from currency_utils import convert_currency
+from response_utils import error_response, get_request_data, success_response
+from session_utils import get_current_user_id, login_required
 
 
 def create_bills_blueprint(bill_service=None):

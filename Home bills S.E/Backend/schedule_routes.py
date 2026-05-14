@@ -3,7 +3,8 @@ from flask import Blueprint, jsonify
 from auth_service import UserRepository
 from bill_service import BillService, serialize_bill
 from reminder_service import ReminderService
-from utils import get_current_user_id, get_request_data, login_required
+from response_utils import get_request_data
+from session_utils import get_current_user_id, login_required
 
 
 def create_schedule_blueprint(bill_service=None, reminder_service=None, users=None):

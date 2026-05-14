@@ -5,6 +5,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from database import db
 from models import User
+from session_utils import SESSION_USER_ID_KEY
 
 
 @dataclass(frozen=True)
@@ -52,14 +53,14 @@ class PasswordHasher:
 class SessionManager:
     def login(self, user):
         session.clear()
-        session["user_id"] = user.id
+        session[SESSION_USER_ID_KEY] = user.id
         session.permanent = True
 
     def logout(self):
         session.clear()
 
     def current_user_id(self):
-        return session.get("user_id")
+        return session.get(SESSION_USER_ID_KEY)
 
 
 class AuthService:

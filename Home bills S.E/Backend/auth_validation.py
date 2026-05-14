@@ -2,6 +2,7 @@ import re
 
 
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+# Eight characters is the app's baseline account-safety floor while keeping signup friction low.
 MIN_PASSWORD_LENGTH = 8
 
 

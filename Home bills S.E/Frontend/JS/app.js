@@ -446,7 +446,7 @@ function scheduleCalendar(bills, baseDate) {
 function scheduleItem(bill) {
   const category = categoryForBill(bill);
   const date = parseDate(bill.due_date);
-  const overdue = isOverdue(bill);
+  const overdue = BillService.isOverdue(bill);
   const statusText = scheduleStatusText(bill);
   return `
     <article class="schedule-item ${overdue ? "overdue" : ""}">
@@ -460,7 +460,7 @@ function scheduleItem(bill) {
         <strong class="${bill.status === "paid" ? "active-text" : ""}" style="color:${bill.status === "paid" ? "var(--success)" : overdue ? "red" : "var(--warning)"}">
           ${statusText}
         </strong>
-        ${billDescription(bill) ? `<p class="schedule-note">${billDescription(bill)}</p>` : ""}
+        ${BillService.description(bill) ? `<p class="schedule-note">${BillService.description(bill)}</p>` : ""}
       </div>
       <div class="schedule-amount">
         ${formatCurrency(bill.amount, bill.currency)}
@@ -477,7 +477,7 @@ function scheduleItem(bill) {
 
 function scheduleStatusText(bill) {
   if (bill.status === "paid") return "Paid";
-  if (isOverdue(bill)) return `Overdue by ${daysOverdue(bill)} days`;
+  if (BillService.isOverdue(bill)) return `Overdue by ${BillService.daysOverdue(bill)} days`;
   const dueDate = parseDate(bill.due_date);
   const today = new Date(new Date().toDateString());
   const daysUntilDue = Math.ceil((dueDate - today) / MS_PER_DAY);

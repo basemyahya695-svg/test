@@ -10,7 +10,7 @@ from email_service import EmailService
 from models import Bill
 from recurrence_service import RecurrenceService
 from reminder_email_builder import ReminderEmailBuilder
-from utils import format_date
+from date_utils import format_date
 
 
 class ReminderBillRepository:

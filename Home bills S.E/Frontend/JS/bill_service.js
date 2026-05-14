@@ -10,7 +10,7 @@ const BillService = {
       total: unpaidAmount,
       paid: bills.filter((bill) => bill.status === "paid").length,
       unpaid: unpaidBills.length,
-      overdue: bills.filter(isOverdue).length,
+      overdue: bills.filter((bill) => this.isOverdue(bill)).length,
       unpaidAmount,
     };
   },
@@ -96,6 +96,26 @@ const BillService = {
 
   registerFrequencyStrategy(frequency, strategy) {
     this.frequencyStrategies[frequency] = strategy;
+  },
+
+  description(bill) {
+    const category = categoryForBill(bill).key;
+    const descriptions = {
+      electricity: "Main house electricity",
+      water: "Household water service",
+      wifi: "Home internet plan",
+      gas: "Natural gas service",
+    };
+    return descriptions[category] || "Household expense";
+  },
+
+  isOverdue(bill) {
+    return bill.status === "unpaid" && parseDate(bill.due_date) < new Date(new Date().toDateString());
+  },
+
+  daysOverdue(bill) {
+    const today = new Date(new Date().toDateString());
+    return Math.max(0, Math.ceil((today - parseDate(bill.due_date)) / MS_PER_DAY));
   },
 
   forMonth(bills, baseDate = new Date()) {

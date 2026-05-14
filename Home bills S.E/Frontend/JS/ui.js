@@ -124,25 +124,6 @@ function categoryForBill(bill) {
   return billCategories.other;
 }
 
-function billDescription(bill) {
-  const category = categoryForBill(bill).key;
-  const descriptions = {
-    electricity: "Main house electricity",
-    water: "Household water service",
-    wifi: "Home internet plan",
-    gas: "Natural gas service",
-  };
-  return descriptions[category] || "Household expense";
-}
-
-function isOverdue(bill) {
-  return bill.status === "unpaid" && parseDate(bill.due_date) < new Date(new Date().toDateString());
-}
-
-function daysOverdue(bill) {
-  return Math.max(0, Math.ceil((new Date(new Date().toDateString()) - parseDate(bill.due_date)) / MS_PER_DAY));
-}
-
 function setToast(message) {
   let toast = document.querySelector(".toast");
   if (!toast) {
@@ -272,7 +253,7 @@ function billCard(bill) {
           ${bill.frequency === "weekly" ? `<span class="badge occurrence">Weekly due date</span>` : ""}
         </h3>
         <div class="bill-meta">Due: ${formatDate(bill.due_date)} <span class="bill-amount">${formatCurrency(bill.amount, bill.currency)}</span></div>
-        <div class="bill-description">${billDescription(bill)}</div>
+        <div class="bill-description">${BillService.description(bill)}</div>
       </div>
       <div class="bill-actions">
         ${bill.status === "unpaid" ? `<button class="icon-button bill-action-button pay-action" type="button" title="Mark paid" aria-label="Mark paid" data-action="pay-bill" data-id="${bill.id}" data-due-date="${bill.due_date}" data-frequency="${bill.frequency || "once"}">${icon("check")}</button>` : ""}
