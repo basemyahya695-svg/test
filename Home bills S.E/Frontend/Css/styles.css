@@ -409,6 +409,11 @@ button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.stats-grid.schedule-stats {
+  grid-template-columns: repeat(2, minmax(260px, 380px));
+  justify-content: center;
+}
+
 .stat-card,
 .content-card,
 .bill-card,
@@ -1130,6 +1135,7 @@ body.dark [data-action="edit-profile"]:hover {
 
   .stats-grid,
   .stats-grid.three,
+  .stats-grid.schedule-stats,
   .search-row,
   .profile-grid {
     grid-template-columns: 1fr;

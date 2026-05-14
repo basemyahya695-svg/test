@@ -365,7 +365,7 @@ function renderSchedulePage(bills) {
   const baseDate = scheduleCalendarDate;
   renderShell("schedule", `
     ${renderTopbar(translatePageCopy("paymentSchedule"), translatePageCopy("scheduleSubtitle"))}
-    <section class="stats-grid">
+    <section class="stats-grid schedule-stats">
       ${statCard("calendar", "#ffffff", "#155dff", bills.length, translatePageCopy("totalBills"))}
       ${statCard("alert", "#ffffff", "#ff5b18", formatCurrency(unpaidSummary.unpaidAmount), translatePageCopy("unpaidAmount"))}
     </section>
