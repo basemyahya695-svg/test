@@ -5,7 +5,7 @@ from flask_cors import CORS
 
 from auth_routes import auth_bp
 from bill_routes import bills_bp
-from config import Config
+from config import API_DEFAULT_PORT, Config
 from database import db
 from schedule_routes import schedule_bp
 from schema import ensure_schema
@@ -46,5 +46,5 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", API_DEFAULT_PORT))
     app.run(host="0.0.0.0", port=port)

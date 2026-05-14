@@ -8,6 +8,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (page === "settings") bootAuthedPage(renderSettingsPage);
 });
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const WEEKLY_INTERVAL_DAYS = 7;
+const SCHEDULE_LOOKAHEAD_YEARS = 1;
+
 let scheduleCalendarDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
 const copy = {
@@ -192,14 +196,14 @@ function expandBillsForDateRange(bills, fromDate, toDate) {
       let current = new Date(dueDate);
       if (current < fromDate) {
         const diff = fromDate - current;
-        const weeks = Math.ceil(diff / (7 * 24 * 60 * 60 * 1000));
-        current.setDate(current.getDate() + weeks * 7);
+        const weeks = Math.ceil(diff / (WEEKLY_INTERVAL_DAYS * MS_PER_DAY));
+        current.setDate(current.getDate() + weeks * WEEKLY_INTERVAL_DAYS);
       }
       while (current <= toDate) {
         if (current >= dueDate) {
           result.push({ ...bill, due_date: \`\${current.getFullYear()}-\${String(current.getMonth() + 1).padStart(2, "0")}-\${String(current.getDate()).padStart(2, "0")}\` });
         }
-        current.setDate(current.getDate() + 7);
+        current.setDate(current.getDate() + WEEKLY_INTERVAL_DAYS);
       }
     } else if (bill.frequency === "monthly") {
       let current = new Date(dueDate);
@@ -248,8 +252,8 @@ function expandBillsForDateRange(bills, fromDate, toDate) {
 function renderHomePage(bills) {
   const summary = getSummary(bills);
   const today = new Date(new Date().toDateString());
-  const oneYearFromNow = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-  const upcoming = expandBillsForDateRange(bills, today, oneYearFromNow)
+  const scheduleEndDate = new Date(today.getFullYear() + SCHEDULE_LOOKAHEAD_YEARS, today.getMonth(), today.getDate());
+  const upcoming = expandBillsForDateRange(bills, today, scheduleEndDate)
     .filter((bill) => bill.status === "unpaid")
     .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date))
     .slice(0, 3);
@@ -368,8 +372,8 @@ function openBillEditor(bill) {
 function renderSchedulePage(bills) {
   const summary = getSummary(bills);
   const today = new Date(new Date().toDateString());
-  const oneYearFromNow = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-  const upcoming = expandBillsForDateRange(bills, today, oneYearFromNow)
+  const scheduleEndDate = new Date(today.getFullYear() + SCHEDULE_LOOKAHEAD_YEARS, today.getMonth(), today.getDate());
+  const upcoming = expandBillsForDateRange(bills, today, scheduleEndDate)
     .filter((bill) => bill.status === "unpaid")
     .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
   const baseDate = scheduleCalendarDate;

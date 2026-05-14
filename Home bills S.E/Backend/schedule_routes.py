@@ -1,38 +1,27 @@
 from flask import Blueprint, jsonify
 
-from models import Bill
 from auth_service import UserRepository
+from bill_service import BillService, serialize_bill
 from reminder_service import ReminderService
-from utils import get_current_user_id, get_request_data, login_required, format_date
+from utils import get_current_user_id, get_request_data, login_required
 
 schedule_bp = Blueprint('schedule', __name__)
+bill_service = BillService()
 reminders = ReminderService()
 users = UserRepository()
 
 @schedule_bp.route("/api/schedule", methods=["GET"])
 @login_required
 def get_schedule():
-    bills = Bill.query.filter_by(
-        user_id=get_current_user_id()
-    ).order_by(Bill.due_date.asc()).all()
-
     schedule = {
         "weekly": [],
         "monthly": [],
         "yearly": [],
     }
 
-    for bill in bills:
+    for bill in bill_service.list_for_user(get_current_user_id()):
         if bill.frequency in schedule:
-            schedule[bill.frequency].append({
-                "id": bill.id,
-                "name": bill.name,
-                "category": bill.category,
-                "amount": bill.amount,
-                "currency": bill.currency,
-                "due_date": format_date(bill.due_date),
-                "status": bill.status
-            })
+            schedule[bill.frequency].append(serialize_bill(bill))
 
     return jsonify(schedule), 200
 

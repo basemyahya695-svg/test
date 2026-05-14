@@ -340,8 +340,8 @@ function openBillEditor(bill, renderer = renderBillsPage) {
 function renderSchedulePage(bills) {
   const summary = BillService.getSummary(BillService.forMonth(bills));
   const today = new Date(new Date().toDateString());
-  const oneYearFromNow = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-  const upcoming = BillService.expandForDateRange(bills, today, oneYearFromNow)
+  const scheduleEndDate = new Date(today.getFullYear() + SCHEDULE_LOOKAHEAD_YEARS, today.getMonth(), today.getDate());
+  const upcoming = BillService.expandForDateRange(bills, today, scheduleEndDate)
     .map((bill) => BillService.withOccurrenceStatus(bill))
     .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
   const baseDate = scheduleCalendarDate;
@@ -370,21 +370,17 @@ function renderSchedulePage(bills) {
   document.querySelector("[data-action='send-reminders']")?.addEventListener("click", async () => {
     try {
       const today = new Date(new Date().toDateString());
-      const fromDate = new Date(today.getFullYear(), today.getMonth() - 2, 1);
-      const toDate = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+      const fromDate = new Date(today.getFullYear(), today.getMonth() - REMINDER_LOOKBACK_MONTHS, 1);
+      const toDate = new Date(today.getFullYear() + SCHEDULE_LOOKAHEAD_YEARS, today.getMonth(), today.getDate());
       const unpaidOccurrenceKeys = BillService.expandForDateRange(bills, fromDate, toDate)
         .map((bill) => BillService.withOccurrenceStatus(bill))
         .filter((bill) => bill.status === "unpaid")
         .map((bill) => BillService.paidOccurrenceKey(bill));
 
-      console.log("Sending reminders with unpaid occurrence keys:", unpaidOccurrenceKeys.length);
-
       const result = await api.sendReminders({
         paidOccurrences: StorageService.getPaidOccurrences(),
         unpaidOccurrenceKeys,
       });
-
-      console.log("Reminder result:", result);
 
       if (result.sent) {
         setToast(`Email sent with ${result.count} bill(s)`);

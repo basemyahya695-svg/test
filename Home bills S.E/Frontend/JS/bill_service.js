@@ -106,7 +106,7 @@ const BillService = {
   frequencyStrategies: {
     weekly(current) {
       const next = new Date(current);
-      next.setDate(next.getDate() + 7);
+      next.setDate(next.getDate() + WEEKLY_INTERVAL_DAYS);
       return next;
     },
 

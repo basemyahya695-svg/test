@@ -1,12 +1,19 @@
 from datetime import date, timedelta
 
+from config import DEFAULT_BILL_FREQUENCY
+
+
+WEEKLY_INTERVAL_DAYS = 7
+DECEMBER = 12
+JANUARY = 1
+
 
 class RecurrenceService:
     def expand_due_dates(self, bill, start_date, end_date):
         due_date = bill.due_date
-        frequency = bill.frequency or "once"
+        frequency = bill.frequency or DEFAULT_BILL_FREQUENCY
 
-        if frequency == "once":
+        if frequency == DEFAULT_BILL_FREQUENCY:
             return [due_date] if due_date <= end_date else []
 
         next_date = {
@@ -30,12 +37,12 @@ class RecurrenceService:
 
     @staticmethod
     def add_week(value):
-        return value + timedelta(days=7)
+        return value + timedelta(days=WEEKLY_INTERVAL_DAYS)
 
     @staticmethod
     def add_month(value):
-        year = value.year + (1 if value.month == 12 else 0)
-        month = 1 if value.month == 12 else value.month + 1
+        year = value.year + (1 if value.month == DECEMBER else 0)
+        month = JANUARY if value.month == DECEMBER else value.month + 1
         day = min(value.day, RecurrenceService.days_in_month(year, month))
         return date(year, month, day)
 
@@ -47,8 +54,8 @@ class RecurrenceService:
 
     @staticmethod
     def days_in_month(year, month):
-        if month == 12:
-            next_month = date(year + 1, 1, 1)
+        if month == DECEMBER:
+            next_month = date(year + 1, JANUARY, 1)
         else:
             next_month = date(year, month + 1, 1)
         return (next_month - timedelta(days=1)).day

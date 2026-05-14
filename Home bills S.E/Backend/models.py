@@ -1,4 +1,4 @@
-# models.py
+from config import BILL_STATUS_UNPAID, DEFAULT_BILL_CURRENCY, DEFAULT_BILL_FREQUENCY
 from database import db
 
 
@@ -22,11 +22,11 @@ class Bill(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     name = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Float, nullable=False)
-    currency = db.Column(db.String(10), default='USD')
+    currency = db.Column(db.String(10), default=DEFAULT_BILL_CURRENCY)
     due_date = db.Column(db.Date, nullable=False)
     category = db.Column(db.String(50), nullable=False)
-    frequency = db.Column(db.String(20), default='once')
-    status = db.Column(db.String(20), default='unpaid')
+    frequency = db.Column(db.String(20), default=DEFAULT_BILL_FREQUENCY)
+    status = db.Column(db.String(20), default=BILL_STATUS_UNPAID)
 
     def to_dict(self):
         return {

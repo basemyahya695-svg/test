@@ -52,12 +52,18 @@ class Config:
     MAIL_USE_SSL = os.environ.get("MAIL_USE_SSL", "false").lower() == "true"
     MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "true").lower() == "true"
 
-# Constants used across different files
+
+API_DEFAULT_PORT = 5000
+SMTP_SSL_PORT = 465
 EMAIL_REMINDER_DAYS_AHEAD = 14
 POPUP_REMINDER_DAYS_AHEAD = 3
 DATE_FORMAT = "%Y-%m-%d"
 BILL_STATUS_UNPAID = "unpaid"
 BILL_STATUS_PAID = "paid"
+DEFAULT_BILL_CURRENCY = "USD"
+DEFAULT_BILL_CATEGORY = "other"
+DEFAULT_BILL_FREQUENCY = "once"
+RENT_BILL_CATEGORY = "rent"
 VALID_FREQUENCIES = {"weekly", "monthly", "yearly", "once"}
 VALID_CURRENCIES = {"USD", "ILS", "JOD", "SAR", "EUR", "EGP"}
 VALID_BILL_CATEGORIES = {"rent", "water", "gas", "wifi", "electricity", "other"}

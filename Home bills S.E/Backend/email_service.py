@@ -3,12 +3,14 @@ from email.message import EmailMessage
 
 from flask import current_app
 
+from config import SMTP_SSL_PORT
+
 
 class EmailService:
     def send(self, recipient, subject, body):
         config = current_app.config
         server = config.get("MAIL_SERVER")
-        port = config.get("MAIL_PORT", 465)
+        port = config.get("MAIL_PORT", SMTP_SSL_PORT)
         sender = config.get("MAIL_FROM") or config.get("MAIL_USERNAME")
 
         if not server or not sender:
@@ -32,7 +34,7 @@ class EmailService:
         message.set_content(body)
 
         try:
-            if config.get("MAIL_USE_SSL", port == 465):
+            if config.get("MAIL_USE_SSL", port == SMTP_SSL_PORT):
                 with smtplib.SMTP_SSL(server, port) as smtp:
                     self.login_and_send(smtp, message, config)
             else:

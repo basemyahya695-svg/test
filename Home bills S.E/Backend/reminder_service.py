@@ -1,6 +1,11 @@
 from datetime import date, timedelta
 
-from config import BILL_STATUS_UNPAID, EMAIL_REMINDER_DAYS_AHEAD, POPUP_REMINDER_DAYS_AHEAD
+from config import (
+    BILL_STATUS_UNPAID,
+    EMAIL_REMINDER_DAYS_AHEAD,
+    POPUP_REMINDER_DAYS_AHEAD,
+    RENT_BILL_CATEGORY,
+)
 from email_service import EmailService
 from models import Bill
 from recurrence_service import RecurrenceService
@@ -15,33 +20,29 @@ class ReminderService:
         self.email_builder = email_builder or ReminderEmailBuilder()
 
     def due_or_near_due_bills(self, user_id, days_ahead):
-        today = date.today()
-        deadline = today + timedelta(days=days_ahead)
-        return Bill.query.filter(
-            Bill.user_id == user_id,
-            Bill.status == BILL_STATUS_UNPAID,
-            Bill.due_date <= deadline,
-        ).order_by(Bill.due_date.asc()).all()
+        return self.due_or_near_due_bills_by_category(user_id, days_ahead)
 
-    def due_or_near_due_rent_bills(self, user_id, days_ahead):
+    def due_or_near_due_bills_by_category(self, user_id, days_ahead, category=None):
         today = date.today()
         deadline = today + timedelta(days=days_ahead)
-        return Bill.query.filter(
+        filters = [
             Bill.user_id == user_id,
             Bill.status == BILL_STATUS_UNPAID,
-            Bill.category == "rent",
             Bill.due_date <= deadline,
-        ).order_by(Bill.due_date.asc()).all()
+        ]
+        if category:
+            filters.append(Bill.category == category)
+
+        return Bill.query.filter(*filters).order_by(Bill.due_date.asc()).all()
 
     def due_or_near_due_rent_occurrences(self, user_id, days_ahead):
         today = date.today()
         deadline = today + timedelta(days=days_ahead)
-        rent_bills = Bill.query.filter(
-            Bill.user_id == user_id,
-            Bill.status == BILL_STATUS_UNPAID,
-            Bill.category == "rent",
-            Bill.due_date <= deadline,
-        ).order_by(Bill.due_date.asc()).all()
+        rent_bills = self.due_or_near_due_bills_by_category(
+            user_id=user_id,
+            days_ahead=days_ahead,
+            category=RENT_BILL_CATEGORY,
+        )
 
         occurrences = []
         for bill in rent_bills:
