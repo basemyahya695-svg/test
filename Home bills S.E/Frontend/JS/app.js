@@ -1,7 +1,11 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  await loadCurrencyOptions();
   const page = document.body.dataset.page;
-  if (page === "login") renderLoginPage();
+  if (page === "login") {
+    renderLoginPage();
+    return;
+  }
+
+  await loadCurrencyOptions();
   if (page === "home") bootAuthedPage(renderHomePage);
   if (page === "bills") bootAuthedPage(renderBillsPage);
   if (page === "schedule") bootAuthedPage(renderSchedulePage);

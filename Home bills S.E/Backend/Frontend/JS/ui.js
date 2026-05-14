@@ -6,11 +6,25 @@ const pages = [
   { key: "settings", label: "Settings", file: "Settings.html", icon: "settings" },
 ];
 
-let currencies = {};
+const FALLBACK_CURRENCIES = {
+  USD: { label: "USD", symbol: "$", rate: 1 },
+  ILS: { label: "ILS", symbol: "₪", rate: 3.70 },
+  JOD: { label: "JOD", symbol: "JD", rate: 0.71 },
+  SAR: { label: "SAR", symbol: "SR", rate: 3.75 },
+  EUR: { label: "EUR", symbol: "€", rate: 0.92 },
+  EGP: { label: "EGP", symbol: "E£", rate: 47.50 },
+};
+
+let currencies = { ...FALLBACK_CURRENCIES };
 
 async function loadCurrencyOptions() {
-  const payload = await api.currencies();
-  currencies = payload.currencies || {};
+  try {
+    const payload = await api.currencies();
+    currencies = Object.keys(payload.currencies || {}).length ? payload.currencies : FALLBACK_CURRENCIES;
+  } catch (error) {
+    console.warn("Could not load currency options", error);
+    currencies = { ...FALLBACK_CURRENCIES };
+  }
 }
 
 const billCategories = {
@@ -87,8 +101,9 @@ function preferredCurrency() {
 }
 
 function convertAmount(amount, fromCurrency = "USD", toCurrency = preferredCurrency()) {
-  const source = currencies[fromCurrency] || currencies.USD;
-  const target = currencies[toCurrency] || currencies.USD;
+  const fallbackCurrency = { rate: 1 };
+  const source = currencies[fromCurrency] || currencies.USD || fallbackCurrency;
+  const target = currencies[toCurrency] || currencies.USD || fallbackCurrency;
   return (Number(amount || 0) / source.rate) * target.rate;
 }
 
