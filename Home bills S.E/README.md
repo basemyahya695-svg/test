@@ -90,6 +90,43 @@ Password: DemoPass123
 
 The seed script is safe to run more than once. It creates the demo user if missing and does not duplicate sample bills when that user already has bills.
 
+## Quick Demo With Sample Data
+
+Follow these steps to launch the MVP with the demo account:
+
+1. Seed the sample data:
+
+```powershell
+cd "<project-folder>\Home bills S.E\Backend"
+python seed_sample_data.py
+```
+
+2. Start the backend from the same `Backend` folder:
+
+```powershell
+python app.py
+```
+
+3. Open a second terminal and start the frontend:
+
+```powershell
+cd "<project-folder>\Home bills S.E\Frontend"
+python -m http.server 8000
+```
+
+4. Open the app in your browser:
+
+```text
+http://127.0.0.1:8000/Html/Login.html
+```
+
+5. Log in with the demo account:
+
+```text
+Email: demo@myhome.local
+Password: DemoPass123
+```
+
 ## Optional Email Setup
 
 Reminder emails use SMTP. Set these environment variables before starting the backend:
