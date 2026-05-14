@@ -1,4 +1,5 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadCurrencyOptions();
   const page = document.body.dataset.page;
   if (page === "login") renderLoginPage();
   if (page === "home") bootAuthedPage(renderHomePage);
@@ -367,33 +368,35 @@ function renderSchedulePage(bills) {
     scheduleCalendarDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 1);
     renderSchedulePage(bills);
   });
-  document.querySelector("[data-action='send-reminders']")?.addEventListener("click", async () => {
-    try {
-      const today = new Date(new Date().toDateString());
-      const fromDate = new Date(today.getFullYear(), today.getMonth() - REMINDER_LOOKBACK_MONTHS, 1);
-      const toDate = new Date(today.getFullYear() + SCHEDULE_LOOKAHEAD_YEARS, today.getMonth(), today.getDate());
-      const unpaidOccurrenceKeys = BillService.expandForDateRange(bills, fromDate, toDate)
-        .map((bill) => BillService.withOccurrenceStatus(bill))
-        .filter((bill) => bill.status === "unpaid")
-        .map((bill) => BillService.paidOccurrenceKey(bill));
-
-      const result = await api.sendReminders({
-        paidOccurrences: StorageService.getPaidOccurrences(),
-        unpaidOccurrenceKeys,
-      });
-
-      if (result.sent) {
-        setToast(`Email sent with ${result.count} bill(s)`);
-        openEmailSentPopup(result.count);
-      } else {
-        setToast(result.message || "Email was not sent. Please check your email configuration.");
-      }
-    } catch (error) {
-      console.error("Failed to send reminders:", error);
-      setToast(error.message || "Failed to send reminders. Please try again.");
-    }
-  });
+  document.querySelector("[data-action='send-reminders']")?.addEventListener("click", () => sendMonthlyReminder(bills));
   bindBillActions(bills, renderSchedulePage);
+}
+
+async function sendMonthlyReminder(bills) {
+  try {
+    const today = new Date(new Date().toDateString());
+    const fromDate = new Date(today.getFullYear(), today.getMonth() - REMINDER_LOOKBACK_MONTHS, 1);
+    const toDate = new Date(today.getFullYear() + SCHEDULE_LOOKAHEAD_YEARS, today.getMonth(), today.getDate());
+    const unpaidOccurrenceKeys = BillService.expandForDateRange(bills, fromDate, toDate)
+      .map((bill) => BillService.withOccurrenceStatus(bill))
+      .filter((bill) => bill.status === "unpaid")
+      .map((bill) => BillService.paidOccurrenceKey(bill));
+
+    const result = await api.sendReminders({
+      paidOccurrences: StorageService.getPaidOccurrences(),
+      unpaidOccurrenceKeys,
+    });
+
+    if (result.sent) {
+      setToast(`Email sent with ${result.count} bill(s)`);
+      openEmailSentPopup(result.count);
+    } else {
+      setToast(result.message || "Email was not sent. Please check your email configuration.");
+    }
+  } catch (error) {
+    console.error("Failed to send reminders:", error);
+    setToast(error.message || "Failed to send reminders. Please try again.");
+  }
 }
 
 function scheduleCalendar(bills, baseDate) {

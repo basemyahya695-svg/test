@@ -1,4 +1,5 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadCurrencyOptions();
   const page = document.body.dataset.page;
   if (page === "login") renderLoginPage();
   if (page === "home") bootAuthedPage(renderHomePage);
@@ -458,7 +459,7 @@ function scheduleItem(bill) {
   const overdue = isOverdue(bill);
   const statusText = scheduleStatusText(bill);
   return `
-    <article class="schedule-item ${overdue && bill.name === "Natural Gas" ? "overdue" : ""}">
+    <article class="schedule-item ${overdue ? "overdue" : ""}">
       <div class="date-tile">
         <small>${date.toLocaleDateString("en-US", { weekday: "short" })}</small>
         <strong>${date.getDate()}</strong>

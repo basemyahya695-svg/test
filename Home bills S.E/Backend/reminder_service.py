@@ -54,13 +54,51 @@ class ReminderSerializer:
         }
 
 
-class ReminderService:
-    def __init__(self, email_service=None, recurrence_service=None, email_builder=None, bills=None, serializer=None):
+class ReminderMailer:
+    def __init__(self, email_service=None, email_builder=None):
         self.email_service = email_service or EmailService()
-        self.recurrence = recurrence_service or RecurrenceService()
         self.email_builder = email_builder or ReminderEmailBuilder()
+
+    def send_monthly_unpaid(self, user, reminders):
+        result = self.email_service.send(
+            recipient=user.email,
+            subject="MyHome Monthly Unpaid Bills",
+            body=self.email_builder.monthly_unpaid_body(reminders),
+        )
+        return self.email_result(result, reminders, "Sent {count} unpaid bill(s) via email")
+
+    def send_rent_due(self, user, reminders):
+        result = self.email_service.send(
+            recipient=user.email,
+            subject="MyHome rent reminder: rent due within two weeks",
+            body=self.email_builder.rent_due_body(reminders),
+        )
+        return self.email_result(result, reminders, "Rent reminder email sent with bill type and payment status")
+
+    @staticmethod
+    def email_result(result, reminders, success_message):
+        return {
+            "sent": result["sent"],
+            "count": len(reminders),
+            "message": success_message.format(count=len(reminders)) if result["sent"] else result.get("error", "Failed to send email"),
+            "bills": reminders,
+        }
+
+
+class ReminderService:
+    def __init__(
+        self,
+        email_service=None,
+        recurrence_service=None,
+        email_builder=None,
+        bills=None,
+        serializer=None,
+        mailer=None,
+    ):
+        self.recurrence = recurrence_service or RecurrenceService()
         self.bills = bills or ReminderBillRepository()
         self.serializer = serializer or ReminderSerializer()
+        self.mailer = mailer or ReminderMailer(email_service, email_builder)
 
     def due_or_near_due_bills(self, user_id, days_ahead):
         return self.due_or_near_due_bills_by_category(user_id, days_ahead)
@@ -123,19 +161,7 @@ class ReminderService:
                 "bills": [],
             }
 
-        body = self.email_builder.monthly_unpaid_body(reminders)
-
-        result = self.email_service.send(
-            recipient=user.email,
-            subject="MyHome Monthly Unpaid Bills",
-            body=body,
-        )
-        return {
-            "sent": result["sent"],
-            "count": len(reminders),
-            "message": f"Sent {len(reminders)} unpaid bill(s) via email" if result["sent"] else result.get("error", "Failed to send email"),
-            "bills": reminders,
-        }
+        return self.mailer.send_monthly_unpaid(user, reminders)
 
     @staticmethod
     def is_occurrence_paid(occurrence_key, paid_occurrences):
@@ -149,14 +175,4 @@ class ReminderService:
         if not reminders:
             return {"sent": False, "count": 0, "message": "No rent bills due in the next two weeks"}
 
-        result = self.email_service.send(
-            recipient=user.email,
-            subject="MyHome rent reminder: rent due within two weeks",
-            body=self.email_builder.rent_due_body(reminders),
-        )
-        return {
-            "sent": result["sent"],
-            "count": len(reminders),
-            "message": "Rent reminder email sent with bill type and payment status" if result["sent"] else result["error"],
-            "bills": reminders,
-        }
+        return self.mailer.send_rent_due(user, reminders)

@@ -38,6 +38,7 @@ const api = {
   }),
   currentUser: () => apiRequest("/me"),
   logout: () => apiRequest("/logout", { method: "POST" }),
+  currencies: () => apiRequest("/config/currencies"),
   bills: () => apiRequest("/bills"),
   addBill: (bill) => apiRequest("/bills", {
     method: "POST",

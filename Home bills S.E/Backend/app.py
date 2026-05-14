@@ -7,6 +7,7 @@ from auth_routes import create_auth_blueprint
 from auth_service import AuthService, UserRepository
 from bill_routes import create_bills_blueprint
 from bill_service import BillService
+from config_routes import create_config_blueprint
 from config import API_DEFAULT_PORT, Config
 from database import db
 from reminder_service import ReminderService
@@ -46,6 +47,7 @@ def register_routes(app):
 
     app.register_blueprint(create_auth_blueprint(auth_service, reminder_service))
     app.register_blueprint(create_bills_blueprint(bill_service))
+    app.register_blueprint(create_config_blueprint())
     app.register_blueprint(create_schedule_blueprint(bill_service, reminder_service, user_repository))
 
     @app.route("/")

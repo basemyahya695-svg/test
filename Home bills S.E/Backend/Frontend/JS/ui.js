@@ -6,14 +6,12 @@ const pages = [
   { key: "settings", label: "Settings", file: "Settings.html", icon: "settings" },
 ];
 
-const currencies = {
-  USD: { label: "USD", symbol: "$", rate: 1 },
-  ILS: { label: "ILS", symbol: "₪", rate: 3.00 },
-  JOD: { label: "JOD", symbol: "JD", rate: 0.71 },
-  SAR: { label: "SAR", symbol: "SR", rate: 3.75 },
-  EUR: { label: "EUR", symbol: "€", rate: 0.92 },
-  EGP: { label: "EGP", symbol: "E£", rate: 47.50 },
-};
+let currencies = {};
+
+async function loadCurrencyOptions() {
+  const payload = await api.currencies();
+  currencies = payload.currencies || {};
+}
 
 const billCategories = {
   rent: { key: "rent", icon: "home", label: "rent", color: "#7c3aed", bg: "#ede7ff", hover: "#f5f1ff" },

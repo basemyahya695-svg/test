@@ -70,7 +70,6 @@ VALID_FREQUENCIES = {"weekly", "monthly", "yearly", "once"}
 VALID_CURRENCIES = {"USD", "ILS", "JOD", "SAR", "EUR", "EGP"}
 VALID_BILL_CATEGORIES = {"rent", "water", "gas", "wifi", "electricity", "other"}
 
-
 EXCHANGE_RATES = {
     "USD": 1.0,
     "ILS": 3.70, 
@@ -79,3 +78,23 @@ EXCHANGE_RATES = {
     "EUR": 0.92,
     "EGP": 47.50
 }
+
+CURRENCY_SYMBOLS = {
+    "USD": "$",
+    "ILS": "₪",
+    "JOD": "JD",
+    "SAR": "SR",
+    "EUR": "€",
+    "EGP": "E£",
+}
+
+
+def currency_options():
+    return {
+        currency: {
+            "label": currency,
+            "symbol": CURRENCY_SYMBOLS[currency],
+            "rate": EXCHANGE_RATES[currency],
+        }
+        for currency in sorted(VALID_CURRENCIES)
+    }
