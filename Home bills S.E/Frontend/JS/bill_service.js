@@ -1,13 +1,17 @@
 const BillService = {
   getSummary(bills) {
     const unpaidBills = bills.filter((bill) => bill.status === "unpaid");
+    const total = bills.reduce(
+      (sum, bill) => sum + convertAmount(bill.amount, bill.currency, "USD"),
+      0
+    );
     const unpaidAmount = unpaidBills.reduce(
       (sum, bill) => sum + convertAmount(bill.amount, bill.currency, "USD"),
       0
     );
 
     return {
-      total: unpaidAmount,
+      total,
       paid: bills.filter((bill) => bill.status === "paid").length,
       unpaid: unpaidBills.length,
       overdue: bills.filter((bill) => this.isOverdue(bill)).length,
@@ -125,6 +129,19 @@ const BillService = {
     return this.expandForDateRange(bills, monthStart, monthEnd)
       .map((bill) => this.withOccurrenceStatus(bill))
       .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
+  },
+
+  forMonthIncludingOverdue(bills, baseDate = new Date()) {
+    const monthStart = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+    const monthBills = this.forMonth(bills, baseDate);
+    const overdueBills = bills.filter((bill) => bill.status === "unpaid" && parseDate(bill.due_date) < monthStart);
+    const uniqueBills = new Map();
+
+    [...overdueBills, ...monthBills].forEach((bill) => {
+      uniqueBills.set(this.paidOccurrenceKey(bill), bill);
+    });
+
+    return [...uniqueBills.values()].sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
   },
 
   frequencyStrategies: {

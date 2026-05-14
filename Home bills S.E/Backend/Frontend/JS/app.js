@@ -198,6 +198,20 @@ function getSummary(bills) {
   return { total, paid, unpaid, overdue, unpaidAmount };
 }
 
+function billsForMonthIncludingOverdue(bills, baseDate = new Date()) {
+  const monthStart = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+  const monthEnd = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
+  const monthBills = expandBillsForDateRange(bills, monthStart, monthEnd);
+  const overdueBills = bills.filter((bill) => bill.status === "unpaid" && parseDate(bill.due_date) < monthStart);
+  const uniqueBills = new Map();
+
+  [...overdueBills, ...monthBills].forEach((bill) => {
+    uniqueBills.set(`${bill.id}:${bill.due_date}`, bill);
+  });
+
+  return [...uniqueBills.values()].sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
+}
+
 function expandBillsForDateRange(bills, fromDate, toDate) {
   const result = [];
   
@@ -266,10 +280,14 @@ function expandBillsForDateRange(bills, fromDate, toDate) {
 }
 
 function renderHomePage(bills) {
-  const summary = getSummary(bills);
   const today = new Date(new Date().toDateString());
-  const scheduleEndDate = new Date(today.getFullYear() + SCHEDULE_LOOKAHEAD_YEARS, today.getMonth(), today.getDate());
-  const upcoming = expandBillsForDateRange(bills, today, scheduleEndDate)
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const currentMonthBills = expandBillsForDateRange(bills, monthStart, monthEnd);
+  const unpaidBills = billsForMonthIncludingOverdue(bills, today);
+  const currentMonthSummary = getSummary(currentMonthBills);
+  const unpaidSummary = getSummary(unpaidBills);
+  const upcoming = unpaidBills
     .filter((bill) => bill.status === "unpaid")
     .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date))
     .slice(0, UPCOMING_BILLS_LIMIT);
@@ -277,10 +295,10 @@ function renderHomePage(bills) {
   renderShell("home", `
     ${renderTopbar(translatePageCopy("dashboard"), translatePageCopy("dashboardSubtitle"))}
     <section class="stats-grid">
-      ${statCard("dollar", "#dceaff", "#155dff", formatCurrency(summary.total), translatePageCopy("totalMonthly"))}
-      ${statCard("alert", "#ffe9ca", "#ff5b18", summary.unpaid, translatePageCopy("unpaidBills"))}
-      ${statCard("check", "#d9fbe6", "#00a84f", summary.paid, translatePageCopy("paidBills"))}
-      ${statCard("trend", "#ffe0e0", "#ff2424", summary.overdue, translatePageCopy("overdueBills"))}
+      ${statCard("dollar", "#dceaff", "#155dff", formatCurrency(currentMonthSummary.total), translatePageCopy("totalMonthly"))}
+      ${statCard("alert", "#ffe9ca", "#ff5b18", unpaidSummary.unpaid, translatePageCopy("unpaidBills"))}
+      ${statCard("check", "#d9fbe6", "#00a84f", currentMonthSummary.paid, translatePageCopy("paidBills"))}
+      ${statCard("trend", "#ffe0e0", "#ff2424", unpaidSummary.overdue, translatePageCopy("overdueBills"))}
     </section>
     <section class="content-card">
       <div class="section-heading">
@@ -399,16 +417,16 @@ function openBillEditor(bill) {
 }
 
 function renderSchedulePage(bills) {
-  const summary = getSummary(bills);
+  const today = new Date(new Date().toDateString());
+  const unpaidSummary = getSummary(billsForMonthIncludingOverdue(bills, today));
   const scheduledBills = [...bills]
     .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
   const baseDate = scheduleCalendarDate;
   renderShell("schedule", `
     ${renderTopbar(translatePageCopy("paymentSchedule"), translatePageCopy("scheduleSubtitle"))}
-    <section class="stats-grid three">
+    <section class="stats-grid">
       ${statCard("calendar", "#ffffff", "#155dff", bills.length, translatePageCopy("totalBills"))}
-      ${statCard("dollar", "#ffffff", "#00a84f", formatCurrency(summary.total), translatePageCopy("monthlyTotal"))}
-      ${statCard("alert", "#ffffff", "#ff5b18", formatCurrency(summary.unpaidAmount), translatePageCopy("unpaidAmount"))}
+      ${statCard("alert", "#ffffff", "#ff5b18", formatCurrency(unpaidSummary.unpaidAmount), translatePageCopy("unpaidAmount"))}
     </section>
     ${scheduleCalendar(bills, baseDate)}
     <h2 class="schedule-month">${translatePageCopy("upcomingSchedule")}</h2>

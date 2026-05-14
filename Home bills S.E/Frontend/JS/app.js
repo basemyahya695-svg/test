@@ -216,18 +216,20 @@ async function showAuthDueBillReminder(user) {
 function renderHomePage(bills) {
   const today = new Date(new Date().toDateString());
   const currentMonthBills = BillService.forMonth(bills, today);
-  const summary = BillService.getSummary(currentMonthBills);
-  const upcoming = currentMonthBills
+  const unpaidBills = BillService.forMonthIncludingOverdue(bills, today);
+  const currentMonthSummary = BillService.getSummary(currentMonthBills);
+  const unpaidSummary = BillService.getSummary(unpaidBills);
+  const upcoming = unpaidBills
     .filter((bill) => bill.status === "unpaid")
     .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
 
   renderShell("home", `
     ${renderTopbar(translatePageCopy("dashboard"), translatePageCopy("dashboardSubtitle"))}
     <section class="stats-grid">
-      ${statCard("dollar", "#dceaff", "#155dff", formatCurrency(summary.total), translatePageCopy("totalMonthly"))}
-      ${statCard("alert", "#ffe9ca", "#ff5b18", summary.unpaid, translatePageCopy("unpaidBills"))}
-      ${statCard("check", "#d9fbe6", "#00a84f", summary.paid, translatePageCopy("paidBills"))}
-      ${statCard("trend", "#ffe0e0", "#ff2424", summary.overdue, translatePageCopy("overdueBills"))}
+      ${statCard("dollar", "#dceaff", "#155dff", formatCurrency(currentMonthSummary.total), translatePageCopy("totalMonthly"))}
+      ${statCard("alert", "#ffe9ca", "#ff5b18", unpaidSummary.unpaid, translatePageCopy("unpaidBills"))}
+      ${statCard("check", "#d9fbe6", "#00a84f", currentMonthSummary.paid, translatePageCopy("paidBills"))}
+      ${statCard("trend", "#ffe0e0", "#ff2424", unpaidSummary.overdue, translatePageCopy("overdueBills"))}
     </section>
     <section class="content-card">
       <div class="section-heading">
@@ -300,17 +302,8 @@ function renderBillsPage(bills) {
 function bindBillActions(bills, renderer = renderBillsPage) {
   document.querySelectorAll("[data-action='pay-bill']").forEach((button) => {
     button.addEventListener("click", async () => {
-      const bill = {
-        ...bills.find((candidateBill) => String(candidateBill.id) === button.dataset.id),
-        due_date: button.dataset.dueDate,
-        frequency: button.dataset.frequency,
-      };
-
-      if (BillService.isRecurring(bill)) {
-        BillService.setPaidOccurrence(bill);
-      } else {
-        await api.payBill(button.dataset.id);
-      }
+      await api.payBill(button.dataset.id);
+      BillService.clearPaidOccurrencesForBill(button.dataset.id);
       announceBillSync();
       setToast("Bill marked as paid");
       await refreshPage(renderer);
@@ -365,16 +358,16 @@ function openBillEditor(bill, renderer = renderBillsPage) {
 }
 
 function renderSchedulePage(bills) {
-  const summary = BillService.getSummary(bills);
+  const today = new Date(new Date().toDateString());
+  const unpaidSummary = BillService.getSummary(BillService.forMonthIncludingOverdue(bills, today));
   const scheduledBills = [...bills]
     .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
   const baseDate = scheduleCalendarDate;
   renderShell("schedule", `
     ${renderTopbar(translatePageCopy("paymentSchedule"), translatePageCopy("scheduleSubtitle"))}
-    <section class="stats-grid three">
+    <section class="stats-grid">
       ${statCard("calendar", "#ffffff", "#155dff", bills.length, translatePageCopy("totalBills"))}
-      ${statCard("dollar", "#ffffff", "#00a84f", formatCurrency(summary.total), translatePageCopy("monthlyTotal"))}
-      ${statCard("alert", "#ffffff", "#ff5b18", formatCurrency(summary.unpaidAmount), translatePageCopy("unpaidAmount"))}
+      ${statCard("alert", "#ffffff", "#ff5b18", formatCurrency(unpaidSummary.unpaidAmount), translatePageCopy("unpaidAmount"))}
     </section>
     ${scheduleCalendar(bills, baseDate)}
     <h2 class="schedule-month">${translatePageCopy("upcomingSchedule")}</h2>
