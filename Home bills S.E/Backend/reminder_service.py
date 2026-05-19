@@ -124,11 +124,16 @@ class ReminderService:
 
         return sorted(occurrences, key=lambda occurrence: occurrence["due_date"])
 
-    def build_reminders(self, user_id):
-        return [
-            self.serializer.serialize_bill(bill)
-            for bill in self.due_or_near_due_bills(user_id, POPUP_REMINDER_DAYS_AHEAD)
-        ]
+    def build_reminders(self, user_id, days_ahead=POPUP_REMINDER_DAYS_AHEAD):
+        today = date.today()
+        deadline = today + timedelta(days=days_ahead)
+        reminders = []
+
+        for bill in self.due_or_near_due_bills(user_id, days_ahead):
+            for due_date in self.recurrence.expand_due_dates(bill, today, deadline):
+                reminders.append(self.serializer.serialize_bill(bill, due_date))
+
+        return sorted(reminders, key=lambda reminder: reminder["due_date"])
 
     def current_month_unpaid_bills(self, user_id, paid_occurrences=None, unpaid_occurrences=None):
         paid_occurrences = paid_occurrences or {}

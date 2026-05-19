@@ -65,8 +65,6 @@ const pageCopy = {
     notifications: "Notifications",
     emailNotifications: "Email Notifications",
     emailNotificationsHelp: "Receive bill updates via email",
-    pushNotifications: "Push Notifications",
-    pushNotificationsHelp: "Receive browser notifications",
     billReminders: "Bill Reminders",
     billRemindersHelp: "Get reminded before bills are due",
     reminderDays: "Reminder Days Before Due",
@@ -123,8 +121,6 @@ const pageCopy = {
     notifications: "التنبيهات",
     emailNotifications: "تنبيهات البريد الإلكتروني",
     emailNotificationsHelp: "استلام تحديثات الفواتير عبر البريد",
-    pushNotifications: "تنبيهات المتصفح",
-    pushNotificationsHelp: "استلام تنبيهات من المتصفح",
     billReminders: "تذكيرات الفواتير",
     billRemindersHelp: "الحصول على تذكير قبل موعد الاستحقاق",
     reminderDays: "أيام التذكير قبل الاستحقاق",
@@ -295,7 +291,7 @@ function renderHomePage(bills) {
   renderShell("home", `
     ${renderTopbar(translatePageCopy("dashboard"), translatePageCopy("dashboardSubtitle"))}
     <section class="stats-grid">
-      ${statCard("dollar", "#dceaff", "#155dff", formatCurrency(currentMonthSummary.total), translatePageCopy("totalMonthly"))}
+      ${statCard("dollar", "#dceaff", "#155dff", formatCurrency(currentMonthSummary.unpaidAmount), translatePageCopy("totalMonthly"))}
       ${statCard("alert", "#ffe9ca", "#ff5b18", unpaidSummary.unpaid, translatePageCopy("unpaidBills"))}
       ${statCard("check", "#d9fbe6", "#00a84f", currentMonthSummary.paid, translatePageCopy("paidBills"))}
       ${statCard("trend", "#ffe0e0", "#ff2424", unpaidSummary.overdue, translatePageCopy("overdueBills"))}
@@ -444,6 +440,11 @@ function renderSchedulePage(bills) {
     renderSchedulePage(bills);
   });
   document.querySelector("[data-action='send-reminders']")?.addEventListener("click", async () => {
+    if (!getNotificationSettings().email) {
+      setToast("Email notifications are turned off");
+      return;
+    }
+
     const result = await api.sendReminders();
     setToast(result.sent ? `Sent ${result.count} reminder email(s)` : result.message);
   });
@@ -563,6 +564,17 @@ function renderProfilePage() {
   document.querySelector("[data-action='edit-profile']").addEventListener("click", () => openProfileEditor({ name, email, phone, address }));
 }
 
+function getNotificationSettings() {
+  const settings = JSON.parse(localStorage.getItem("myhome:settings") || "{}");
+  const days = Number(settings.days);
+
+  return {
+    email: settings.email ?? true,
+    reminders: settings.reminders ?? true,
+    days: Number.isFinite(days) ? Math.min(30, Math.max(1, Math.round(days))) : 3,
+  };
+}
+
 function profileField(iconName, label, value) {
   return `<label class="field"><span>${icon(iconName)} ${label}</span><input value="${value}" disabled></label>`;
 }
@@ -606,7 +618,6 @@ function renderSettingsPage() {
       <section class="content-card settings-stack">
         <h2 class="section-title">${icon("bell")} ${translatePageCopy("notifications")}</h2>
         ${settingToggle(translatePageCopy("emailNotifications"), translatePageCopy("emailNotificationsHelp"), "email", settings.email ?? true)}
-        ${settingToggle(translatePageCopy("pushNotifications"), translatePageCopy("pushNotificationsHelp"), "push", settings.push ?? true)}
         ${settingToggle(translatePageCopy("billReminders"), translatePageCopy("billRemindersHelp"), "reminders", settings.reminders ?? true)}
         <label class="setting-row">
           <span><strong>${translatePageCopy("reminderDays")}</strong><span class="setting-subtitle">${translatePageCopy("reminderDaysHelp")}</span></span>
@@ -637,7 +648,13 @@ function renderSettingsPage() {
     input.addEventListener("change", () => {
       const next = JSON.parse(localStorage.getItem("myhome:settings") || "{}");
       const value = input.type === "checkbox" ? input.checked : input.value;
+      delete next.push;
       next[input.dataset.setting] = value;
+      if (input.dataset.setting === "days") {
+        const days = Number(value);
+        next.days = Number.isFinite(days) ? Math.min(30, Math.max(1, Math.round(days))) : 3;
+        input.value = next.days;
+      }
       localStorage.setItem("myhome:settings", JSON.stringify(next));
       if (input.dataset.setting === "dark") {
         localStorage.setItem("myhome:dark", String(value));

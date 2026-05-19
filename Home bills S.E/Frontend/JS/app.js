@@ -67,8 +67,6 @@ const pageCopy = {
     notifications: "Notifications",
     emailNotifications: "Email Notifications",
     emailNotificationsHelp: "Receive bill updates via email",
-    pushNotifications: "Push Notifications",
-    pushNotificationsHelp: "Receive browser notifications",
     billReminders: "Bill Reminders",
     billRemindersHelp: "Get reminded before bills are due",
     reminderDays: "Reminder Days Before Due",
@@ -125,8 +123,6 @@ const pageCopy = {
     notifications: "التنبيهات",
     emailNotifications: "تنبيهات البريد الإلكتروني",
     emailNotificationsHelp: "استلام تحديثات الفواتير عبر البريد",
-    pushNotifications: "تنبيهات المتصفح",
-    pushNotificationsHelp: "استلام تنبيهات من المتصفح",
     billReminders: "تذكيرات الفواتير",
     billRemindersHelp: "الحصول على تذكير قبل موعد الاستحقاق",
     reminderDays: "أيام التذكير قبل الاستحقاق",
@@ -184,7 +180,7 @@ async function bootAuthedPage(renderer) {
     const bills = await api.bills();
     renderer(bills);
     if (document.body.dataset.page === "home") {
-      showAuthDueBillReminder(user);
+      showDueBillReminder(user, bills);
     }
   } catch (error) {
     clearStoredUser();
@@ -200,17 +196,39 @@ function announceBillSync() {
   StorageService.setValue(STORAGE_KEYS.billSync, String(Date.now()));
 }
 
-async function showAuthDueBillReminder(user) {
+function showDueBillReminder(user, bills) {
   const expectedUser = String(user.id || user.email || "current");
   if (sessionStorage.getItem(STORAGE_KEYS.showDueRemindersAfterAuth) !== expectedUser) return;
 
-  try {
-    const reminders = await api.reminders();
+  const settings = StorageService.getNotificationSettings();
+  if (!settings.reminders) {
     sessionStorage.removeItem(STORAGE_KEYS.showDueRemindersAfterAuth);
-    openDueBillsPopup(reminders.filter((bill) => !BillService.isPaidOccurrence(bill)));
-  } catch (error) {
-    console.warn("Could not load due bill reminders", error);
+    return;
   }
+
+  const today = new Date(new Date().toDateString());
+  const deadline = new Date(today);
+  deadline.setDate(today.getDate() + settings.days);
+
+  const overdueBills = bills.filter((bill) => bill.status === "unpaid" && parseDate(bill.due_date) < today);
+  const upcomingBills = BillService.expandForDateRange(bills, today, deadline)
+    .map((bill) => BillService.withOccurrenceStatus(bill))
+    .filter((bill) => bill.status === "unpaid");
+
+  const remindersByOccurrence = new Map();
+  [...overdueBills, ...upcomingBills].forEach((bill) => {
+    if (!BillService.isPaidOccurrence(bill)) {
+      remindersByOccurrence.set(BillService.paidOccurrenceKey(bill), bill);
+    }
+  });
+
+  const reminders = [...remindersByOccurrence.values()]
+    .sort((a, b) => parseDate(a.due_date) - parseDate(b.due_date));
+
+  sessionStorage.removeItem(STORAGE_KEYS.showDueRemindersAfterAuth);
+  if (!reminders.length) return;
+
+  openDueBillsPopup(reminders, settings.days);
 }
 
 function renderHomePage(bills) {
@@ -226,7 +244,7 @@ function renderHomePage(bills) {
   renderShell("home", `
     ${renderTopbar(translatePageCopy("dashboard"), translatePageCopy("dashboardSubtitle"))}
     <section class="stats-grid">
-      ${statCard("dollar", "#dceaff", "#155dff", formatCurrency(currentMonthSummary.total), translatePageCopy("totalMonthly"))}
+      ${statCard("dollar", "#dceaff", "#155dff", formatCurrency(currentMonthSummary.unpaidAmount), translatePageCopy("totalMonthly"))}
       ${statCard("alert", "#ffe9ca", "#ff5b18", unpaidSummary.unpaid, translatePageCopy("unpaidBills"))}
       ${statCard("check", "#d9fbe6", "#00a84f", currentMonthSummary.paid, translatePageCopy("paidBills"))}
       ${statCard("trend", "#ffe0e0", "#ff2424", unpaidSummary.overdue, translatePageCopy("overdueBills"))}
@@ -389,6 +407,11 @@ function renderSchedulePage(bills) {
 }
 
 async function sendMonthlyReminder(bills) {
+  if (!StorageService.getNotificationSettings().email) {
+    setToast("Email notifications are turned off");
+    return;
+  }
+
   try {
     const today = new Date(new Date().toDateString());
     const fromDate = new Date(today.getFullYear(), today.getMonth() - REMINDER_LOOKBACK_MONTHS, 1);
@@ -424,7 +447,6 @@ function scheduleCalendar(bills, baseDate) {
   const lastDay = new Date(year, month, daysInMonth);
   const monthBills = BillService.expandForDateRange(bills, firstDay, lastDay)
     .map((bill) => BillService.withOccurrenceStatus(bill));
-
   const cells = [];
   for (let index = 0; index < leading; index += 1) {
     cells.push(`<div class="calendar-cell muted-cell"></div>`);
@@ -574,7 +596,6 @@ function renderSettingsPage() {
       <section class="content-card settings-stack">
         <h2 class="section-title">${icon("bell")} ${translatePageCopy("notifications")}</h2>
         ${settingToggle(translatePageCopy("emailNotifications"), translatePageCopy("emailNotificationsHelp"), "email", settings.email ?? true)}
-        ${settingToggle(translatePageCopy("pushNotifications"), translatePageCopy("pushNotificationsHelp"), "push", settings.push ?? true)}
         ${settingToggle(translatePageCopy("billReminders"), translatePageCopy("billRemindersHelp"), "reminders", settings.reminders ?? true)}
         <label class="setting-row">
           <span><strong>${translatePageCopy("reminderDays")}</strong><span class="setting-subtitle">${translatePageCopy("reminderDaysHelp")}</span></span>
@@ -605,7 +626,15 @@ function renderSettingsPage() {
     input.addEventListener("change", () => {
       const next = StorageService.getSettings();
       const value = input.type === "checkbox" ? input.checked : input.value;
+      delete next.push;
       next[input.dataset.setting] = value;
+      if (input.dataset.setting === "days") {
+        const days = Number(value);
+        next.days = Number.isFinite(days)
+          ? Math.min(REMINDER_DAYS_MAX, Math.max(REMINDER_DAYS_MIN, Math.round(days)))
+          : REMINDER_DAYS_DEFAULT;
+        input.value = next.days;
+      }
       StorageService.setSettings(next);
       if (input.dataset.setting === "dark") {
         StorageService.setBoolean(STORAGE_KEYS.darkMode, value);

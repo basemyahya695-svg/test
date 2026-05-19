@@ -51,7 +51,7 @@ const api = {
   deleteBill: (id) => apiRequest(`/bills/${id}`, { method: "DELETE" }),
   payBill: (id) => apiRequest(`/bills/${id}/pay`, { method: "PATCH" }),
   schedule: () => apiRequest("/schedule"),
-  reminders: () => apiRequest("/reminders"),
+  reminders: (days) => apiRequest(`/reminders${days ? `?days=${encodeURIComponent(days)}` : ""}`),
   sendReminders: ({ paidOccurrences = {}, unpaidOccurrenceKeys = [] } = {}) => apiRequest("/reminders/send", {
     method: "POST",
     body: JSON.stringify({

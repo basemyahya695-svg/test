@@ -149,24 +149,26 @@ function setToast(message) {
   window.setTimeout(() => toast.classList.remove("show"), TOAST_DURATION_MS);
 }
 
-function openDueBillsPopup(reminders) {
-  if (!reminders.length) return;
+function openDueBillsPopup(reminders, days = REMINDER_DAYS_DEFAULT) {
+  const unpaidReminders = reminders.filter((bill) => bill.status === "unpaid");
+  if (!unpaidReminders.length) return;
+  const dayText = days === 1 ? "1 day" : `${days} days`;
 
   ModalService.open(`
     <section class="modal reminder-modal" role="dialog" aria-modal="true" aria-labelledby="due-reminders-title">
       <div class="modal-header">
-        <h2 id="due-reminders-title">Bills due in the next 3 days</h2>
+        <h2 id="due-reminders-title">Bills due in the next ${dayText}</h2>
         <button class="icon-button" type="button" data-action="close-modal">×</button>
       </div>
       <div class="reminder-list">
-        ${reminders.map((bill) => {
+        ${unpaidReminders.map((bill) => {
           const category = categoryForBill(bill);
           return `
             <article class="reminder-item" style="--category-color:${category.color};--category-hover:${category.hover}">
               <div class="category-icon" style="background:${category.bg};color:${category.color}">${icon(category.icon)}</div>
               <div>
                 <h3>${bill.name}</h3>
-                <p>${formatCurrency(bill.amount, bill.currency)} due ${formatDate(bill.due_date)} · ${bill.state}</p>
+                <p>${formatCurrency(bill.amount, bill.currency)} due ${formatDate(bill.due_date)} - ${reminderStateText(bill)}</p>
               </div>
             </article>
           `;
@@ -177,6 +179,18 @@ function openDueBillsPopup(reminders) {
       </div>
     </section>
   `);
+}
+
+function reminderStateText(bill) {
+  if (bill.state) return bill.state;
+
+  const today = new Date(new Date().toDateString());
+  const dueDate = parseDate(bill.due_date);
+  if (dueDate < today) return "overdue";
+  if (dueDate.getTime() === today.getTime()) return "due today";
+
+  const daysUntilDue = Math.ceil((dueDate - today) / MS_PER_DAY);
+  return `due in ${daysUntilDue} day${daysUntilDue === 1 ? "" : "s"}`;
 }
 
 function openEmailSentPopup(billCount = 0) {

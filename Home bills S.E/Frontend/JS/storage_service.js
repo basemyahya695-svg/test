@@ -35,6 +35,19 @@ const StorageService = {
     return this.getJson(STORAGE_KEYS.settings, {});
   },
 
+  getNotificationSettings() {
+    const settings = this.getSettings();
+    const days = Number(settings.days);
+
+    return {
+      email: settings.email ?? true,
+      reminders: settings.reminders ?? true,
+      days: Number.isFinite(days)
+        ? Math.min(REMINDER_DAYS_MAX, Math.max(REMINDER_DAYS_MIN, Math.round(days)))
+        : REMINDER_DAYS_DEFAULT,
+    };
+  },
+
   setSettings(settings) {
     this.setJson(STORAGE_KEYS.settings, settings);
   },
